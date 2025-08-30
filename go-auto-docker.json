@@ -1,0 +1,5 @@
+{
+	"DirCache": "~/.cache/go-auto-docker",
+	"auto_git_msg": "Auto update",
+	"auto_log_end": "<!--CHANGE-LOG-END-->"
+}
