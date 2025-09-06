@@ -44,8 +44,8 @@ type TypeDocker struct {
 	Pkg      string
 
 	Distro string
-	Repo   string
-	Branch []string
+	Branch string
+	Repo   []string
 
 	VerCurr string
 	VerNew  string
@@ -59,7 +59,7 @@ func (d *TypeDocker) Init(dir string) *TypeDocker {
 	d.myType = "TypeDocker"
 	prefix := d.myType + ".Init"
 
-	d.Branch = []string{"main", "community"}
+	d.Repo = []string{"main", "community"}
 	d.Dir = dir
 	d.FilePath = path.Join(d.Dir, "Dockerfile")
 	helper.ReportDebug(d, prefix, false, true)
@@ -126,12 +126,12 @@ func (d *TypeDocker) Update() *TypeDocker {
 	}
 	if d.Err == nil {
 		// Check for new version
-		for _, b := range d.Branch {
-			verNew := *DbAlpine.PkgVerGet(d.Pkg, d.Repo, b)
+		for _, b := range d.Repo {
+			verNew := *DbAlpine.PkgVerGet(d.Pkg, d.Branch, b)
 			if DbAlpine.Err == nil {
 				if verNew > d.VerNew {
 					d.VerNew = verNew
-					helper.ReportDebug(d.Repo+"/"+b+":"+d.Pkg+":"+verNew+">"+d.VerCurr, prefix, false, true)
+					helper.ReportDebug(d.Branch+"/"+b+":"+d.Pkg+":"+verNew+">"+d.VerCurr, prefix, false, true)
 				}
 			}
 		}
@@ -200,18 +200,18 @@ func (d *TypeDocker) extract() *TypeDocker {
 	}
 	if d.Err == nil {
 		testing := "testing"
-		branchTesting := d.Repo + "/" + testing
+		branchTesting := d.Branch + "/" + testing
 		for _, line := range d.Content {
 			words := strings.Split(line, " ")
 			switch strings.ToLower(words[0]) {
 			case "from":
 				helper.ReportDebug(line, prefix, false, true)
 				d.Distro = words[1]
-				// detect repo, eg. "alpine:edge" -> "edge"
+				// detect branch, eg. "alpine:edge" -> "edge"
 				tmp := strings.Split(words[1], ":")
 				if len(tmp) == 2 {
 					d.Distro = tmp[0]
-					d.Repo = tmp[1]
+					d.Branch = tmp[1]
 				}
 			case "label":
 				helper.ReportDebug(words[1], prefix, false, true)
@@ -226,8 +226,8 @@ func (d *TypeDocker) extract() *TypeDocker {
 			default:
 				// detect branch testing
 				if strings.Contains(line, branchTesting) {
-					if !helper.StrArrayPtrContain(&d.Branch, &testing) {
-						d.Branch = append(d.Branch, testing)
+					if !helper.StrArrayPtrContain(&d.Repo, &testing) {
+						d.Repo = append(d.Repo, testing)
 					}
 				}
 			}

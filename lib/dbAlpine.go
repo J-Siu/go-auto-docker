@@ -42,10 +42,13 @@ import (
 const extTgz = ".tar.gz"
 
 var DbAlpineDefault = TypeDbAlpine{
-	Arch:   []string{"aarch64", "armhf", "armv7", "x86", "x86_64"},
-	Branch: []string{"community", "main", "testing"},
-	Distro: "alpine",
-	Repo:   []string{"latest-stable", "edge"},
+	FileIndex: "APKINDEX",
+	UrlBase:   "http://dl-cdn.alpinelinux.org/alpine",
+
+	Distro:     "alpine",
+	Branch:     []string{"latest-stable", "edge"},
+	Repository: []string{"community", "main", "testing"},
+	Arch:       []string{"aarch64", "armhf", "armv7", "x86", "x86_64"},
 }
 
 // Alpine package database struct base on repo, branch and arch
@@ -60,18 +63,18 @@ type TypeDbAlpine struct {
 	FileIndex string
 	UrlBase   string
 
-	Arch   []string
-	Branch []string
-	Distro string
-	Repo   []string
+	Distro     string
+	Branch     []string
+	Repository []string
+	Arch       []string
 }
 
 type TypeDbAlpineRecord struct {
 	// gorm.Model
-	Repo   string `json:"Repo"`
-	Branch string `json:"Branch"`
-	Arch   string `json:"Arch"`
 	Pkg    string `json:"Pkg"`
+	Branch string `json:"Branch"`
+	Repo   string `json:"Repo"`
+	Arch   string `json:"Arch"`
 	Ver    string `json:"Ver"`
 }
 
@@ -81,18 +84,30 @@ func (a *TypeDbAlpine) Init() *TypeDbAlpine {
 	prefix := a.myType + ".init"
 	helper.ReportDebug("-- Start", prefix, false, true)
 
-	a.Arch = DbAlpineDefault.Arch
-	a.Branch = DbAlpineDefault.Branch
-	a.Distro = DbAlpineDefault.Distro
-	a.Repo = DbAlpineDefault.Repo
+	a.setDefault()
 
 	a.DirDb = path.Join(Conf.DirCache, Conf.DirDB, a.Distro)
 	a.FileDb = path.Join(Conf.DirCache, Conf.DirDB, a.Distro, a.Distro+".db")
-	a.FileIndex = "APKINDEX"
-	a.UrlBase = "http://dl-cdn.alpinelinux.org/alpine"
 
 	helper.ReportDebug(a, prefix, false, false)
 	helper.ReportDebug("-- End", prefix, false, true)
+
+	return a
+}
+
+func (a *TypeDbAlpine) setDefault() *TypeDbAlpine {
+	a.Arch = DbAlpineDefault.Arch
+	a.Repository = DbAlpineDefault.Repository
+	a.Distro = DbAlpineDefault.Distro
+	a.Branch = DbAlpineDefault.Branch
+	a.FileIndex = DbAlpineDefault.FileIndex
+	a.UrlBase = DbAlpineDefault.UrlBase
+
+	if len(Conf.AlpineBranch) == 0 {
+		a.Branch = DbAlpineDefault.Branch
+	} else {
+		a.Branch = Conf.AlpineBranch
+	}
 
 	return a
 }
@@ -226,7 +241,7 @@ func (a *TypeDbAlpine) PkgSearch(pkg string) *TypeDbAlpine {
 	if a.Err == nil {
 		result := a.Db.
 			Unscoped().
-			Select([]string{"Pkg", "Ver", "Repo", "Branch", "Arch"})
+			Select([]string{"Pkg", "Ver", "Branch", "Repo", "Arch"})
 		if FlagDbSearch.Exact {
 			result = result.Where(map[string]interface{}{"Pkg": pkg})
 		} else {
@@ -238,7 +253,7 @@ func (a *TypeDbAlpine) PkgSearch(pkg string) *TypeDbAlpine {
 
 	if a.Err == nil {
 		for _, r := range rows {
-			helper.Report(r.Pkg+" "+r.Ver+" "+r.Repo+" "+r.Branch+" "+r.Arch, "", true, false)
+			helper.Report(r.Pkg+" "+r.Ver+" "+r.Branch+" "+r.Repo+" "+r.Arch, "", true, false)
 		}
 	}
 
@@ -248,7 +263,7 @@ func (a *TypeDbAlpine) PkgSearch(pkg string) *TypeDbAlpine {
 	return a
 }
 
-func (a *TypeDbAlpine) PkgVerGet(pkg string, repo string, branch string) (ver *string) {
+func (a *TypeDbAlpine) PkgVerGet(pkg string, branch string, repo string) (ver *string) {
 	prefix := a.myType + ".PkgVerGet"
 	helper.ReportDebug("-- Start", prefix, false, true)
 
@@ -269,8 +284,8 @@ func (a *TypeDbAlpine) PkgVerGet(pkg string, repo string, branch string) (ver *s
 		result := a.Db.
 			Unscoped().
 			Where(map[string]interface{}{
-				"Repo":   repo,
 				"Branch": branch,
+				"Repo":   repo,
 				"Arch":   a.Arch,
 				"Pkg":    pkg,
 			}).
@@ -289,15 +304,17 @@ func (a *TypeDbAlpine) dbDownload() (err error) {
 	prefix := a.myType + ".dbDownload"
 	helper.ReportDebug("-- Start", prefix, false, true)
 
-	for _, repo := range a.Repo {
-		for _, branch := range a.Branch {
+	for _, branch := range a.Branch {
+		for _, repo := range a.Repository {
 			for _, arch := range a.Arch {
-				if !(repo == "latest-stable" && branch == "testing") {
+				// stable branches don't have "testing"
+				stable := branch == "latest-stable" || strings.ToLower(branch)[0] == 'v'
+				if !(stable && repo == "testing") {
 					// Download APKINDEX.tar.gz
-					err = a.idxDownload(repo, branch, arch)
+					err = a.idxDownload(branch, repo, arch)
 					// Update database
 					if err == nil {
-						err = a.idx2db(repo, branch, arch)
+						err = a.idx2db(branch, repo, arch)
 					}
 					helper.ErrsQueue(err, prefix)
 				}
@@ -309,15 +326,15 @@ func (a *TypeDbAlpine) dbDownload() (err error) {
 	return err
 }
 
-func (a *TypeDbAlpine) idxDownload(repo string, branch string, arch string) (err error) {
+func (a *TypeDbAlpine) idxDownload(branch string, repo string, arch string) (err error) {
 	prefix := a.myType + ".idxDownload"
 	helper.ReportDebug("-- Start", prefix, false, true)
 
 	// Prepare download URL
-	urlApkIndex, err := url.JoinPath(a.UrlBase, repo, branch, arch, a.FileIndex+extTgz)
+	urlApkIndex, err := url.JoinPath(a.UrlBase, branch, repo, arch, a.FileIndex+extTgz)
 
 	// Create directory
-	dirArch := a.idxDir(repo, branch, arch)
+	dirArch := a.idxDir(branch, repo, arch)
 	if err == nil {
 		err = os.MkdirAll(dirArch, os.ModePerm)
 		helper.ErrsQueue(err, prefix)
@@ -338,11 +355,11 @@ func (a *TypeDbAlpine) idxDownload(repo string, branch string, arch string) (err
 	return err
 }
 
-func (a *TypeDbAlpine) idx2db(repo string, branch string, arch string) (err error) {
+func (a *TypeDbAlpine) idx2db(branch string, repo string, arch string) (err error) {
 	prefix := a.myType + ".idx2db"
 	helper.ReportDebug("-- Start", prefix, false, true)
 
-	dirArch := a.idxDir(repo, branch, arch)
+	dirArch := a.idxDir(branch, repo, arch)
 	filepathApkIndex := path.Join(dirArch, a.FileIndex)
 	helper.ReportDebug(filepathApkIndex, prefix, false, true)
 
@@ -382,8 +399,8 @@ func (a *TypeDbAlpine) idx2db(repo string, branch string, arch string) (err erro
 }
 
 // Calculate(join) APKINDEX directory path base on `repo`, `branch`, `arch` and
-func (a *TypeDbAlpine) idxDir(repo string, branch string, arch string) string {
-	return path.Join(a.DirDb, repo, branch, arch)
+func (a *TypeDbAlpine) idxDir(branch string, repo string, arch string) string {
+	return path.Join(a.DirDb, branch, repo, arch)
 }
 
 // URL download to file
@@ -405,7 +422,7 @@ func download(url string, filepath string) (err error) {
 		defer res.Body.Close()
 		_, err = io.Copy(out, res.Body)
 	}
-	helper.ErrsQueue(err, prefix)
+	// helper.ErrsQueue(err, prefix)
 
 	helper.ReportDebug("-- End", prefix, false, true)
 	return err
