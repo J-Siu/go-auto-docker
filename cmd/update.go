@@ -75,8 +75,10 @@ var updateCmd = &cobra.Command{
 			if err == nil {
 				docker.
 					Init(repo.DirCache).
-					Update().
-					Write()
+					Update()
+				if docker.VerNew > docker.VerCurr {
+					docker.Write()
+				}
 				if lib.Flag.Debug {
 					docker.Dump()
 				}
@@ -133,7 +135,7 @@ var updateCmd = &cobra.Command{
 					}
 
 				} else {
-					helper.Report(docker.Pkg+": "+docker.VerCurr+" -> No update", prefix, false, true)
+					helper.Report(docker.Pkg+": "+docker.VerCurr+" -> No update ("+docker.VerNew+")", prefix, false, true)
 				}
 			}
 		}
