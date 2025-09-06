@@ -118,9 +118,9 @@ func (d *TypeDocker) Update() *TypeDocker {
 		for _, b := range d.Branch {
 			verNew := *DbAlpine.PkgVerGet(d.Pkg, d.Repo, b)
 			if DbAlpine.Err == nil {
-				helper.ReportDebug(d.Repo+"/"+b+":"+d.Pkg+":"+verNew, prefix, false, true)
 				if verNew > d.VerNew {
 					d.VerNew = verNew
+					helper.ReportDebug(d.Repo+"/"+b+":"+d.Pkg+":"+verNew+">"+d.VerCurr, prefix, false, true)
 				}
 			}
 		}
@@ -207,7 +207,7 @@ func (d *TypeDocker) extract() *TypeDocker {
 				switch strings.ToLower(label[0]) {
 				case "version":
 					d.VerCurr = strings.ReplaceAll(label[1], "\"", "")
-					d.VerNew = d.VerCurr
+					d.VerNew = ""
 				case "name":
 					d.Pkg = strings.ReplaceAll(label[1], "\"", "")
 				}
