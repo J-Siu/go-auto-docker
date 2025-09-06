@@ -82,8 +82,19 @@ func (d *TypeDocker) BuildTest() *TypeDocker {
 		d.Err = errors.New("not initialized")
 		helper.ErrsQueue(d.Err, prefix)
 	}
+	var cmd *helper.MyCmd
+	imgName := d.Pkg + ":" + "auto_docker"
 	if d.Err == nil {
-		// Build test
+		// RUN_CMD "docker build --quiet -t ${_img} ."
+		args := []string{"build", "--quiet", "-t", imgName, "."}
+		cmd = helper.MyCmdRun("docker", &args, &d.Dir)
+		d.Err = cmd.Err
+	}
+	if d.Err == nil {
+		// RUN_CMD "docker image rm ${_img}"
+		args := []string{"image", "rm", imgName}
+		cmd = helper.MyCmdRun("docker", &args, &d.Dir)
+		d.Err = cmd.Err
 	}
 	return d
 }
@@ -199,6 +210,7 @@ func (d *TypeDocker) extract() *TypeDocker {
 				// detect repo, eg. "alpine:edge" -> "edge"
 				tmp := strings.Split(words[1], ":")
 				if len(tmp) == 2 {
+					d.Distro = tmp[0]
 					d.Repo = tmp[1]
 				}
 			case "label":
