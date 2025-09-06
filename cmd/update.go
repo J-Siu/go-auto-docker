@@ -76,36 +76,35 @@ var updateCmd = &cobra.Command{
 				docker.
 					Init(repo.DirCache).
 					Update()
-				if docker.VerNew > docker.VerCurr {
-					docker.Write()
-				}
 				if lib.Flag.Debug {
 					docker.Dump()
 				}
 				err = docker.Err
 			}
 
-			// test build
-			if err == nil && lib.FlagUpdate.BuildTest {
-				// TODO: Docker test build
-				err = docker.Err
-			}
-
 			if err == nil {
 				if docker.VerNew > docker.VerCurr {
 
+					if err == nil {
+						docker.Write()
+						err = docker.Err
+					}
+
+					// test build
+					if err == nil && lib.FlagUpdate.BuildTest {
+						docker.BuildTest()
+						err = docker.Err
+					}
+
 					// README.md file. Depends on docker.VerCurr. Must be done after processing docker.
 					if err == nil {
-						helper.Report(docker.Pkg+": "+docker.VerCurr+" -> "+docker.VerNew, prefix, false, true)
-						if docker.VerNew > docker.VerCurr {
-							readme.
-								Init(repo.DirCache, docker.Pkg, docker.VerCurr, docker.VerNew).
-								Read().
-								Update().
-								Write()
-							if lib.Flag.Debug {
-								readme.Dump()
-							}
+						readme.
+							Init(repo.DirCache, docker.Pkg, docker.VerCurr, docker.VerNew).
+							Read().
+							Update().
+							Write()
+						if lib.Flag.Debug {
+							readme.Dump()
 						}
 						err = readme.Err
 					}
@@ -134,6 +133,9 @@ var updateCmd = &cobra.Command{
 						repo.CopyCacheToSrc()
 					}
 
+					if err == nil {
+						helper.Report(docker.Pkg+": "+docker.VerCurr+" -> "+docker.VerNew, prefix, false, true)
+					}
 				} else {
 					helper.Report(docker.Pkg+": "+docker.VerCurr+" -> No update ("+docker.VerNew+")", prefix, false, true)
 				}
