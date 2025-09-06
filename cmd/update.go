@@ -85,51 +85,56 @@ var updateCmd = &cobra.Command{
 
 			// test build
 			if err == nil && lib.FlagUpdate.BuildTest {
+				// TODO: Docker test build
 				err = docker.Err
 			}
 
-			if docker.VerNew > docker.VerCurr {
-				// README.md file. Depends on docker.VerCurr. Must be done after processing docker.
-				if err == nil {
-					helper.Report(docker.Pkg+": "+docker.VerCurr+" -> "+docker.VerNew, prefix, false, true)
-					if docker.VerNew > docker.VerCurr {
-						readme.
-							Init(repo.DirCache, docker.Pkg, docker.VerCurr, docker.VerNew).
+			if err == nil {
+				if docker.VerNew > docker.VerCurr {
+
+					// README.md file. Depends on docker.VerCurr. Must be done after processing docker.
+					if err == nil {
+						helper.Report(docker.Pkg+": "+docker.VerCurr+" -> "+docker.VerNew, prefix, false, true)
+						if docker.VerNew > docker.VerCurr {
+							readme.
+								Init(repo.DirCache, docker.Pkg, docker.VerCurr, docker.VerNew).
+								Read().
+								Update().
+								Write()
+							if lib.Flag.Debug {
+								readme.Dump()
+							}
+						}
+						err = readme.Err
+					}
+
+					// LICENSE file
+					if err == nil {
+						license.
+							Init(repo.DirCache).
 							Read().
 							Update().
 							Write()
 						if lib.Flag.Debug {
-							readme.Dump()
+							license.Dump()
 						}
+						err = license.Err
 					}
-					err = readme.Err
-				}
 
-				// LICENSE file
-				if err == nil {
-					license.
-						Init(repo.DirCache).
-						Read().
-						Update().
-						Write()
-					if lib.Flag.Debug {
-						license.Dump()
+					// Repository commit and tag
+					if err == nil && lib.FlagUpdate.Commit {
+						repo.Commit(docker.VerNew, lib.FlagUpdate.Tag, true)
+						err = repo.Err
 					}
-					err = license.Err
-				}
 
-				// Repository commit and tag
-				if err == nil && lib.FlagUpdate.Commit {
-					repo.Commit(docker.VerNew, lib.FlagUpdate.Tag, true)
-					err = repo.Err
-				}
+					// Repository copy back
+					if err == nil && lib.FlagUpdate.Save {
+						repo.CopyCacheToSrc()
+					}
 
-				// Repository copy back
-				if err == nil && lib.FlagUpdate.Save {
-					repo.CopyCacheToSrc()
+				} else {
+					helper.Report(docker.Pkg+": "+docker.VerCurr+" -> No update", prefix, false, true)
 				}
-			} else {
-				helper.Report(docker.Pkg+": "+docker.VerCurr+" -> No update", prefix, false, true)
 			}
 		}
 	},
