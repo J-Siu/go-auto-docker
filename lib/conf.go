@@ -35,6 +35,8 @@ var Default = TypeConf{
 	FileLicense: "LICENSE",
 	FileReadme:  "README.md",
 
+	AlpineBranch: []string{"latest-stable", "edge"},
+
 	TagReadmeLogStart: "<!--CHANGE-LOG-START-->",
 	TagReadmeLogEnd:   "<!--CHANGE-LOG-END-->",
 }
@@ -50,6 +52,8 @@ type TypeConf struct {
 	FileConf    string `json:"FileConf"`    // Full path of config file. Default: ~/.config/go-auto-docker.json
 	FileLicense string `json:"FileLicense"` // Filename, not full path, of readme file. Default: LICENSE
 	FileReadme  string `json:"FileReadme"`  // Filename, not full path, of readme file. Default: README.md
+
+	AlpineBranch []string `json:"AlpineBranch"`
 
 	// TODO: Change following to array
 	TagReadmeLogStart string `json:"ReadmeLogStart"` // Default: <!--CHANGE-LOG-START-->
@@ -100,6 +104,7 @@ func (c *TypeConf) setDefault() *TypeConf {
 	c.DirRepo = Default.DirRepo
 	c.FileLicense = Default.FileLicense
 	c.FileReadme = Default.FileReadme
+	c.AlpineBranch = Default.AlpineBranch
 	c.TagReadmeLogEnd = Default.TagReadmeLogEnd
 	c.TagReadmeLogStart = Default.TagReadmeLogStart
 	return c

@@ -1,4 +1,9 @@
 {
+	"AlpineBranch": [
+		"edge",
+		"latest-stable",
+		"v3.22"
+	],
 	"DirCache": "~/.cache/go-auto-docker",
 	"TagReadmeLogEnd": "<!--CHANGE-LOG-END-->",
 	"TagReadmeLogStart": "### Change Log"
