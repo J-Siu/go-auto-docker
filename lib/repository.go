@@ -57,7 +57,7 @@ func (p *TypeRepository) Init(workPath string) *TypeRepository {
 	}
 
 	_, p.Name = path.Split(p.DirSrc)
-	p.DirCacheBase = path.Join(Conf.DirCache, Default.DirProj)
+	p.DirCacheBase = path.Join(Conf.DirCache, Default.DirRepo)
 	p.DirCache = path.Join(p.DirCacheBase, p.Name)
 
 	helper.ReportDebug(p, prefix, false, true)

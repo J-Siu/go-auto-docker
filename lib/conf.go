@@ -30,7 +30,7 @@ import (
 var Default = TypeConf{
 	DirCache:    "~/.cache/go-auto-docker",
 	DirDB:       "db",
-	DirProj:     "proj",
+	DirRepo:     "repo",
 	FileConf:    "~/.config/go-auto-docker.json",
 	FileLicense: "LICENSE",
 	FileReadme:  "README.md",
@@ -46,11 +46,12 @@ type TypeConf struct {
 
 	DirCache    string `json:"DirCache"`    // Directory name, not full path, of cache. Default: ~/.cache/go-auto-docker
 	DirDB       string `json:"DirDB"`       // Directory name, not full path, of database. Default: db
-	DirProj     string `json:"DirProj"`     // Directory name, not full path, of project(cloning). Default: proj
+	DirRepo     string `json:"DirRepo"`     // Directory name, not full path, of repository copy. Default: repo
 	FileConf    string `json:"FileConf"`    // Full path of config file. Default: ~/.config/go-auto-docker.json
 	FileLicense string `json:"FileLicense"` // Filename, not full path, of readme file. Default: LICENSE
 	FileReadme  string `json:"FileReadme"`  // Filename, not full path, of readme file. Default: README.md
 
+	// TODO: Change following to array
 	TagReadmeLogStart string `json:"ReadmeLogStart"` // Default: <!--CHANGE-LOG-START-->
 	TagReadmeLogEnd   string `json:"ReadmeLogEnd"`   // Default: <!--CHANGE-LOG-END-->
 }
@@ -60,11 +61,11 @@ func (c *TypeConf) Init() *TypeConf {
 	c.myType = "TypeConf"
 	prefix := c.myType + ".Init"
 
-	c.readFileConf()
-	helper.ReportDebug(c, prefix+": Raw", false, true)
-
 	c.setDefault()
 	helper.ReportDebug(c, prefix+": Default + Flag", false, true)
+
+	c.readFileConf()
+	helper.ReportDebug(c, prefix+": Raw", false, true)
 
 	c.expand()
 	helper.ReportDebug(c, prefix+": Expand", false, true)
@@ -89,32 +90,18 @@ func (c *TypeConf) readFileConf() *TypeConf {
 	return c
 }
 
-// Set default value if a field is empty
+// Should be called before reading config file
 func (c *TypeConf) setDefault() *TypeConf {
-	if c.DirCache == "" {
-		c.DirCache = Default.DirCache
-	}
-	if c.DirDB == "" {
-		c.DirDB = Default.DirDB
-	}
-	if c.DirProj == "" {
-		c.DirProj = Default.DirProj
-	}
 	if c.FileConf == "" {
 		c.FileConf = Default.FileConf
 	}
-	if c.FileLicense == "" {
-		c.FileLicense = Default.FileLicense
-	}
-	if c.FileReadme == "" {
-		c.FileReadme = Default.FileReadme
-	}
-	if c.TagReadmeLogEnd == "" {
-		c.TagReadmeLogEnd = Default.TagReadmeLogEnd
-	}
-	if c.TagReadmeLogStart == "" {
-		c.TagReadmeLogStart = Default.TagReadmeLogStart
-	}
+	c.DirCache = Default.DirCache
+	c.DirDB = Default.DirDB
+	c.DirRepo = Default.DirRepo
+	c.FileLicense = Default.FileLicense
+	c.FileReadme = Default.FileReadme
+	c.TagReadmeLogEnd = Default.TagReadmeLogEnd
+	c.TagReadmeLogStart = Default.TagReadmeLogStart
 	return c
 }
 
