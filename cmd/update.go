@@ -148,7 +148,7 @@ func init() {
 	rootCmd.AddCommand(updateCmd)
 	updateCmd.Flags().BoolVarP(&lib.FlagUpdate.Commit, "commit", "c", false, "apply git commit. Only work with -save")
 	updateCmd.Flags().BoolVarP(&lib.FlagUpdate.BuildTest, "buildTest", "b", false, "so not perform docker build")
-	updateCmd.Flags().BoolVarP(&lib.FlagUpdate.Save, "save", "", false, "write back to project folder (cancel on error)")
+	updateCmd.Flags().BoolVarP(&lib.FlagUpdate.Save, "save", "s", false, "write back to project folder (cancel on error)")
 	updateCmd.Flags().BoolVarP(&lib.FlagUpdate.Tag, "tag", "t", false, "apply git tag. (only work with --commit)")
-	updateCmd.Flags().BoolVarP(&lib.FlagUpdate.UpdateDb, "updateDb", "", false, "update Alpine package database")
+	updateCmd.Flags().BoolVarP(&lib.FlagUpdate.UpdateDb, "updateDb", "u", false, "update Alpine package database")
 }
