@@ -185,9 +185,12 @@ func (p *TypeRepository) copyDir(dirSrc string, dirDest string) *TypeRepository 
 	}
 	if p.Err == nil {
 		os.RemoveAll(dirDest) // Delete first
-		if p.Err = os.CopyFS(dirDest, os.DirFS(dirSrc)); p.Err != nil {
-			helper.ErrsQueue(p.Err, prefix)
-		}
+		p.Err = os.CopyFS(dirDest, os.DirFS(dirSrc))
+
 	}
+	if p.Err == nil && Flag.Verbose {
+		helper.Report(dirSrc+" -> "+dirDest, prefix, false, true)
+	}
+	helper.ErrsQueue(p.Err, prefix)
 	return p
 }
