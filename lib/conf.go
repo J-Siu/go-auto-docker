@@ -27,7 +27,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var Default = TypeConf{
+var ConfDefault = TypeConf{
 	DirCache:    "~/.cache/go-auto-docker",
 	DirDB:       "db",
 	DirRepo:     "repo",
@@ -97,16 +97,16 @@ func (c *TypeConf) readFileConf() *TypeConf {
 // Should be called before reading config file
 func (c *TypeConf) setDefault() *TypeConf {
 	if c.FileConf == "" {
-		c.FileConf = Default.FileConf
+		c.FileConf = ConfDefault.FileConf
 	}
-	c.DirCache = Default.DirCache
-	c.DirDB = Default.DirDB
-	c.DirRepo = Default.DirRepo
-	c.FileLicense = Default.FileLicense
-	c.FileReadme = Default.FileReadme
-	c.AlpineBranch = Default.AlpineBranch
-	c.TagReadmeLogEnd = Default.TagReadmeLogEnd
-	c.TagReadmeLogStart = Default.TagReadmeLogStart
+	c.DirCache = ConfDefault.DirCache
+	c.DirDB = ConfDefault.DirDB
+	c.DirRepo = ConfDefault.DirRepo
+	c.FileLicense = ConfDefault.FileLicense
+	c.FileReadme = ConfDefault.FileReadme
+	c.AlpineBranch = ConfDefault.AlpineBranch
+	c.TagReadmeLogEnd = ConfDefault.TagReadmeLogEnd
+	c.TagReadmeLogStart = ConfDefault.TagReadmeLogStart
 	return c
 }
 

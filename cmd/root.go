@@ -58,5 +58,5 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Debug, "debug", "d", false, "enable debug")
-	rootCmd.PersistentFlags().StringVarP(&lib.Conf.FileConf, "config", "", lib.Default.FileConf, "config file")
+	rootCmd.PersistentFlags().StringVarP(&lib.Conf.FileConf, "config", "", lib.ConfDefault.FileConf, "config file")
 }
