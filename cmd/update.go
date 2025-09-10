@@ -137,11 +137,11 @@ var updateCmd = &cobra.Command{
 						helper.Report("YES: "+docker.Pkg+": "+docker.VerCurr+" -> "+docker.VerNew, prefix, false, true)
 					}
 				} else {
-					varNew := docker.VerNew
-					if varNew == "" {
-						varNew = "N/A"
+					verNew := docker.VerNew
+					if verNew == "" {
+						verNew = "N/A"
 					}
-					helper.Report("NO : "+docker.Pkg+": "+docker.VerCurr+" -> "+docker.VerNew, prefix, false, true)
+					helper.Report("NO : "+docker.Pkg+": "+docker.VerCurr+" -> "+verNew, prefix, false, true)
 				}
 			}
 		}
