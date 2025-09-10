@@ -15,6 +15,9 @@
 
 ### Change Log
 
+- v0.5.0
+  - Feature completed
+
 ### License
 
 The MIT License (MIT)
