@@ -96,6 +96,13 @@ func (d *TypeDocker) BuildTest() *TypeDocker {
 		cmd = helper.MyCmdRun("docker", &args, &d.Dir)
 		d.Err = cmd.Err
 	}
+	if Flag.Verbose || Flag.Debug {
+		if d.Err == nil {
+			helper.Report(imgName+": Success", prefix, false, true)
+		} else {
+			helper.Report(imgName+": Failed", prefix, false, true)
+		}
+	}
 	return d
 }
 
