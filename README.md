@@ -17,6 +17,8 @@
 
 - v0.5.0
   - Feature completed
+- v0.5.1
+  - update to go-helper/v2
 
 ### License
 

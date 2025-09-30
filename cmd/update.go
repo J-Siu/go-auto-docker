@@ -25,8 +25,9 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"github.com/J-Siu/go-auto-docker/global"
 	"github.com/J-Siu/go-auto-docker/lib"
-	"github.com/J-Siu/go-helper"
+	"github.com/J-Siu/go-helper/v2/ezlog"
 	"github.com/spf13/cobra"
 )
 
@@ -36,20 +37,20 @@ var updateCmd = &cobra.Command{
 	Short:   "Update Alpine package version",
 	Run: func(cmd *cobra.Command, args []string) {
 		prefix := "update"
-		helper.ReportDebug(&lib.FlagUpdate, "FlagUpdate", false, false)
+		ezlog.Debug().Nn("FlagUpdate").M(&global.FlagUpdate).Out()
 
 		var err error
 
-		if lib.FlagUpdate.UpdateDb {
-			lib.DbAlpine.
-				Init().
+		if global.FlagUpdate.UpdateDb {
+			global.DbAlpine.
+				New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch).
 				DbUpdate()
 		} else {
-			lib.DbAlpine.
-				Init().
+			global.DbAlpine.
+				New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch).
 				DbConnect()
 		}
-		err = lib.DbAlpine.Err
+		err = global.DbAlpine.Err
 
 		if err != nil {
 			return
@@ -67,16 +68,16 @@ var updateCmd = &cobra.Command{
 
 			// Repository copy to cache(tmp)
 			repo.
-				Init(workPath).
+				New(&workPath, &global.Conf.DirCache, &global.Conf.DirRepo, global.Flag.Verbose).
 				CopySrcToCache()
 			err = repo.Err
 
 			// Dockerfile file
 			if err == nil {
 				docker.
-					Init(repo.DirCache).
-					Update()
-				if lib.Flag.Debug {
+					New(&repo.DirCache, global.Flag.Debug, global.Flag.Verbose).
+					Update(&global.DbAlpine)
+				if global.Flag.Debug {
 					docker.Dump()
 				}
 				err = docker.Err
@@ -91,7 +92,7 @@ var updateCmd = &cobra.Command{
 					}
 
 					// test build
-					if err == nil && lib.FlagUpdate.BuildTest {
+					if err == nil && global.FlagUpdate.BuildTest {
 						docker.BuildTest()
 						err = docker.Err
 					}
@@ -99,11 +100,11 @@ var updateCmd = &cobra.Command{
 					// README.md file. Depends on docker.VerCurr. Must be done after processing docker.
 					if err == nil {
 						readme.
-							Init(repo.DirCache, docker.Pkg, docker.VerCurr, docker.VerNew).
+							New(&repo.DirCache, &docker.Pkg, &docker.VerCurr, &docker.VerNew, &global.Conf.FileReadme, &global.Conf.TagReadmeLogStart, &global.Conf.TagReadmeLogEnd).
 							Read().
 							Update().
 							Write()
-						if lib.Flag.Debug {
+						if global.Flag.Debug {
 							readme.Dump()
 						}
 						err = readme.Err
@@ -112,36 +113,36 @@ var updateCmd = &cobra.Command{
 					// LICENSE file
 					if err == nil {
 						license.
-							Init(repo.DirCache).
+							New(&repo.DirCache, &global.Conf.FileLicense).
 							Read().
 							Update().
 							Write()
-						if lib.Flag.Debug {
+						if global.Flag.Debug {
 							license.Dump()
 						}
 						err = license.Err
 					}
 
 					// Repository commit and tag
-					if err == nil && lib.FlagUpdate.Commit {
-						repo.Commit(docker.VerNew, lib.FlagUpdate.Tag, true)
+					if err == nil && global.FlagUpdate.Commit {
+						repo.Commit(docker.VerNew, global.FlagUpdate.Tag, true)
 						err = repo.Err
 					}
 
 					// Repository copy back
-					if err == nil && lib.FlagUpdate.Save {
+					if err == nil && global.FlagUpdate.Save {
 						repo.CopyCacheToSrc()
 					}
 
 					if err == nil {
-						helper.Report("YES: "+docker.Pkg+": "+docker.VerCurr+" -> "+docker.VerNew, prefix, false, true)
+						ezlog.Log().N(prefix).N("YES").N(docker.Pkg).M(docker.VerCurr).M("->").M(docker.VerNew).Out()
 					}
 				} else {
 					verNew := docker.VerNew
 					if verNew == "" {
 						verNew = "N/A"
 					}
-					helper.Report("NO : "+docker.Pkg+": "+docker.VerCurr+" -> "+verNew, prefix, false, true)
+					ezlog.Log().N(prefix).N("NO").N(docker.Pkg).M(docker.VerCurr).M("->").M(docker.VerNew).Out()
 				}
 			}
 		}
@@ -150,9 +151,9 @@ var updateCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(updateCmd)
-	updateCmd.Flags().BoolVarP(&lib.FlagUpdate.Commit, "commit", "c", false, "apply git commit. Only work with -save")
-	updateCmd.Flags().BoolVarP(&lib.FlagUpdate.BuildTest, "buildTest", "b", false, "so not perform docker build")
-	updateCmd.Flags().BoolVarP(&lib.FlagUpdate.Save, "save", "s", false, "write back to project folder (cancel on error)")
-	updateCmd.Flags().BoolVarP(&lib.FlagUpdate.Tag, "tag", "t", false, "apply git tag. (only work with --commit)")
-	updateCmd.Flags().BoolVarP(&lib.FlagUpdate.UpdateDb, "updateDb", "u", false, "update Alpine package database")
+	updateCmd.Flags().BoolVarP(&global.FlagUpdate.Commit, "commit", "c", false, "apply git commit. Only work with -save")
+	updateCmd.Flags().BoolVarP(&global.FlagUpdate.BuildTest, "buildTest", "b", false, "so not perform docker build")
+	updateCmd.Flags().BoolVarP(&global.FlagUpdate.Save, "save", "s", false, "write back to project folder (cancel on error)")
+	updateCmd.Flags().BoolVarP(&global.FlagUpdate.Tag, "tag", "t", false, "apply git tag. (only work with --commit)")
+	updateCmd.Flags().BoolVarP(&global.FlagUpdate.UpdateDb, "updateDb", "u", false, "update Alpine package database")
 }

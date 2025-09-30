@@ -29,88 +29,93 @@ import (
 	"os"
 	"path"
 
-	"github.com/J-Siu/go-helper"
+	"github.com/J-Siu/go-basestruct"
+	"github.com/J-Siu/go-helper/v2/errs"
+	"github.com/J-Siu/go-helper/v2/ezlog"
+	"github.com/J-Siu/go-helper/v2/file"
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/config"
 	"github.com/go-git/go-git/v6/plumbing"
 )
 
 type TypeRepository struct {
-	Err    error
-	init   bool
-	myType string
+	*basestruct.Base
 
 	DirCache     string // project copy location
 	DirCacheBase string
 	DirSrc       string // project(git repo) original location
 	Name         string
+
+	Verbose bool
 }
 
-func (p *TypeRepository) Init(workPath string) *TypeRepository {
-	p.myType = "TypeRepository"
-	prefix := p.myType + ".init"
-	helper.ReportDebug("-- Start", prefix, false, true)
+func (t *TypeRepository) New(workPath, dirCache, dirRepo *string, verbose bool) *TypeRepository {
+	t.Base = new(basestruct.Base)
+	t.MyType = "TypeRepository"
+	prefix := t.MyType + ".init"
+	ezlog.Debug().N(prefix).TxtStart().Out()
 
-	p.DirSrc = workPath
-	if p.DirSrc == "." {
-		p.DirSrc = *helper.CurrentPath()
+	t.Verbose = verbose
+	t.DirSrc = *workPath
+	if t.DirSrc == "." {
+		t.DirSrc = *file.CurrentPath()
 	}
 
-	_, p.Name = path.Split(p.DirSrc)
-	p.DirCacheBase = path.Join(Conf.DirCache, Conf.DirRepo)
-	p.DirCache = path.Join(p.DirCacheBase, p.Name)
+	_, t.Name = path.Split(t.DirSrc)
+	t.DirCacheBase = path.Join(*dirCache, *dirRepo)
+	t.DirCache = path.Join(t.DirCacheBase, t.Name)
 
-	helper.ReportDebug(p, prefix, false, true)
+	ezlog.Debug().N(prefix).M(t).Out()
 
-	_, p.Err = git.PlainOpen(p.DirSrc)
-	if p.Err != nil {
-		p.Err = errors.New(p.DirSrc + " is not a git repository.")
-		helper.ErrsQueue(p.Err, prefix)
+	_, t.Err = git.PlainOpen(t.DirSrc)
+	if t.Err != nil {
+		t.Err = errors.New(t.DirSrc + " is not a git repository.")
+		errs.Queue(prefix, t.Err)
 	}
 
-	p.init = true
+	t.Initialized = true
 
-	return p
+	return t
 }
 
-func (p *TypeRepository) CopySrcToCache() *TypeRepository {
-	prefix := p.myType + ".CopySrcToCache"
-	helper.ReportDebug("-- Start", prefix, false, true)
-	if p.Err != nil {
-		return p
+func (t *TypeRepository) CopySrcToCache() *TypeRepository {
+	prefix := t.MyType + ".CopySrcToCache"
+	ezlog.Debug().N(prefix).TxtStart().Out()
+	if t.Err != nil {
+		return t
 	}
-	if !p.init {
-		p.Err = errors.New("not initialized")
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
 	}
-	if p.Err == nil {
-		p.copyDir(p.DirSrc, p.DirCache)
+	if t.Err == nil {
+		t.copyDir(t.DirSrc, t.DirCache)
 	}
-	return p
+	return t
 }
 
-func (p *TypeRepository) CopyCacheToSrc() *TypeRepository {
-	prefix := p.myType + ".CopyCacheToSrc"
-	helper.ReportDebug("-- Start", prefix, false, true)
-	if p.Err != nil {
-		return p
+func (t *TypeRepository) CopyCacheToSrc() *TypeRepository {
+	prefix := t.MyType + ".CopyCacheToSrc"
+	ezlog.Debug().N(prefix).TxtStart().Out()
+	if t.Err != nil {
+		return t
 	}
-	if !p.init {
-		p.Err = errors.New("not initialized")
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
 	}
-	if p.Err == nil {
-		p.copyDir(p.DirCache, p.DirSrc)
+	if t.Err == nil {
+		t.copyDir(t.DirCache, t.DirSrc)
 	}
-	return p
+	return t
 }
 
-func (p *TypeRepository) Commit(msg string, tag bool, cache bool) *TypeRepository {
-	prefix := p.myType + ".Commit"
-	helper.ReportDebug("-- Start", prefix, false, true)
-	if p.Err != nil {
-		return p
+func (t *TypeRepository) Commit(msg string, tag bool, cache bool) *TypeRepository {
+	prefix := t.MyType + ".Commit"
+	ezlog.Debug().N(prefix).TxtStart().Out()
+	if t.Err != nil {
+		return t
 	}
-	if !p.init {
-		p.Err = errors.New("not initialized")
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
 	}
 
 	commitOptions := git.CommitOptions{}
@@ -122,75 +127,74 @@ func (p *TypeRepository) Commit(msg string, tag bool, cache bool) *TypeRepositor
 	var gitWorktree *git.Worktree
 	var gitHead *plumbing.Reference
 	if cache {
-		gitDir = p.DirCache
+		gitDir = t.DirCache
 	} else {
-		gitDir = p.DirSrc
+		gitDir = t.DirSrc
 	}
 	prefix = prefix + "(" + gitDir + ")"
 	// Repository open
-	if p.Err == nil {
-		gitRepo, p.Err = git.PlainOpen(gitDir)
+	if t.Err == nil {
+		gitRepo, t.Err = git.PlainOpen(gitDir)
 	}
 	// Repository load config
-	if p.Err == nil {
-		gitConf, p.Err = gitRepo.Config()
-		gitConf.User.Name = "J"
-		helper.ReportDebug(gitConf, prefix, false, true)
+	if t.Err == nil {
+		gitConf, t.Err = gitRepo.Config()
+		gitConf.User.Name = "J" // TODO: why J?
+		ezlog.Debug().Nn(prefix).M(gitConf).Out()
 	}
 	// Repository worktree
-	if p.Err == nil {
-		gitWorktree, p.Err = gitRepo.Worktree()
-		helper.ReportDebug("repo worktree created", prefix, false, true)
+	if t.Err == nil {
+		gitWorktree, t.Err = gitRepo.Worktree()
+		ezlog.Debug().N(prefix).M("repo worktree created").Out()
 	}
 	// Worktree stage all
-	if p.Err == nil {
+	if t.Err == nil {
 		addOpt := git.AddOptions{
 			All:  true,
 			Path: gitDir,
 		}
-		p.Err = gitWorktree.AddWithOptions(&addOpt)
-		helper.ReportDebug("worktree staged("+gitDir+")", prefix, false, true)
+		t.Err = gitWorktree.AddWithOptions(&addOpt)
+		ezlog.Debug().N(prefix).M("worktree staged(" + gitDir + ")").Out()
 	}
 	// Worktree commit
-	if p.Err == nil {
-		commit, p.Err = gitWorktree.Commit(msg, &commitOptions)
+	if t.Err == nil {
+		commit, t.Err = gitWorktree.Commit(msg, &commitOptions)
 		// commit, p.Err = gitWorktree.Commit(msg, nil)
-		helper.ReportDebug("worktree committed", prefix, false, true)
+		ezlog.Debug().N(prefix).M("worktree committed").Out()
 	}
 	// Repository commit
-	if p.Err == nil {
+	if t.Err == nil {
 		// commitObj, p.Err = p.gitRepo.CommitObject(commit)
-		_, p.Err = gitRepo.CommitObject(commit)
-		helper.ReportDebug("repo committed", prefix, false, true)
+		_, t.Err = gitRepo.CommitObject(commit)
+		ezlog.Debug().N(prefix).M("repo committed").Out()
 	}
 	// Repository tag
 	if tag {
-		if p.Err == nil {
-			gitHead, p.Err = gitRepo.Head()
+		if t.Err == nil {
+			gitHead, t.Err = gitRepo.Head()
 		}
-		if p.Err == nil {
-			_, p.Err = gitRepo.CreateTag(msg, gitHead.Hash(), nil)
-			helper.ReportDebug("tag("+msg+")", prefix, false, true)
+		if t.Err == nil {
+			_, t.Err = gitRepo.CreateTag(msg, gitHead.Hash(), nil)
+			ezlog.Debug().N(prefix).M("tag(" + msg + ")").Out()
 		}
 	}
-	helper.ErrsQueue(p.Err, prefix)
-	return p
+	errs.Queue(prefix, t.Err)
+	return t
 }
 
-func (p *TypeRepository) copyDir(dirSrc string, dirDest string) *TypeRepository {
-	prefix := p.myType + ".copyDir"
-	helper.ReportDebug("-- Start", prefix, false, true)
-	if p.Err != nil {
-		return p
+func (t *TypeRepository) copyDir(dirSrc, dirDest string) *TypeRepository {
+	prefix := t.MyType + ".copyDir"
+	ezlog.Debug().N(prefix).TxtStart().Out()
+	if t.Err != nil {
+		return t
 	}
-	if p.Err == nil {
+	if t.Err == nil {
 		os.RemoveAll(dirDest) // Delete first
-		p.Err = os.CopyFS(dirDest, os.DirFS(dirSrc))
-
+		t.Err = os.CopyFS(dirDest, os.DirFS(dirSrc))
 	}
-	if p.Err == nil && Flag.Verbose {
-		helper.Report(dirSrc+" -> "+dirDest, prefix, false, true)
+	if t.Err == nil && t.Verbose {
+		ezlog.Log().N(prefix).M(dirSrc).M("->").M(dirDest).Out()
 	}
-	helper.ErrsQueue(p.Err, prefix)
-	return p
+	errs.Queue(prefix, t.Err)
+	return t
 }

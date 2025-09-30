@@ -4,7 +4,7 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"github.com/J-Siu/go-auto-docker/lib"
+	"github.com/J-Siu/go-auto-docker/global"
 	"github.com/spf13/cobra"
 )
 
@@ -14,12 +14,12 @@ var dbSearchCmd = &cobra.Command{
 	Aliases: []string{"s"},
 	Short:   "Search database",
 	Run: func(cmd *cobra.Command, args []string) {
-		lib.DbAlpine.
-			Init().
+		global.DbAlpine.
+			New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch).
 			DbConnect()
-		if lib.DbAlpine.Err == nil {
+		if global.DbAlpine.Err == nil {
 			for _, pkg := range args {
-				lib.DbAlpine.PkgSearch(pkg)
+				global.DbAlpine.PkgSearch(pkg, global.FlagDbSearch.Exact)
 			}
 		}
 	},
@@ -27,5 +27,5 @@ var dbSearchCmd = &cobra.Command{
 
 func init() {
 	dbCmd.AddCommand(dbSearchCmd)
-	dbSearchCmd.Flags().BoolVarP(&lib.FlagDbSearch.Exact, "exact", "e", false, "search exact word")
+	dbSearchCmd.Flags().BoolVarP(&global.FlagDbSearch.Exact, "exact", "e", false, "search exact word")
 }

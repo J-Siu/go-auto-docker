@@ -30,13 +30,16 @@ import (
 	"path"
 	"strings"
 
-	"github.com/J-Siu/go-helper"
+	"github.com/J-Siu/go-basestruct"
+	"github.com/J-Siu/go-helper/v2/cmd"
+	"github.com/J-Siu/go-helper/v2/errs"
+	"github.com/J-Siu/go-helper/v2/ezlog"
+	"github.com/J-Siu/go-helper/v2/file"
+	"github.com/J-Siu/go-helper/v2/str"
 )
 
 type TypeDocker struct {
-	Err    error
-	init   bool
-	myType string
+	*basestruct.Base
 
 	Content  []string
 	Dir      string
@@ -49,196 +52,201 @@ type TypeDocker struct {
 
 	VerCurr string
 	VerNew  string
+
+	Debug   bool
+	Verbose bool
 }
 
 // Assuming branch = main + community
 //
 // Read and extract information from Dockerfile
-func (d *TypeDocker) Init(dir string) *TypeDocker {
-	d.init = true
-	d.myType = "TypeDocker"
-	prefix := d.myType + ".Init"
+func (t *TypeDocker) New(dir *string, debug, verbose bool) *TypeDocker {
+	t.Base = new(basestruct.Base)
+	t.Initialized = true
+	t.MyType = "TypeDocker"
+	prefix := t.MyType + ".Init"
 
-	d.Repo = []string{"main", "community"}
-	d.Dir = dir
-	d.FilePath = path.Join(d.Dir, "Dockerfile")
-	helper.ReportDebug(d, prefix, false, true)
-	if !helper.IsRegularFile(d.FilePath) {
-		d.Err = errors.New(d.FilePath + " not found")
+	t.Verbose = verbose
+	t.Repo = []string{"main", "community"}
+	t.Dir = *dir
+	t.FilePath = path.Join(t.Dir, "Dockerfile")
+	ezlog.Debug().Nn(prefix).M(t).Out()
+	if !file.IsRegularFile(t.FilePath) {
+		t.Err = errors.New(t.FilePath + " not found")
 	}
-	if d.Err == nil {
-		d.read().extract()
+	if t.Err == nil {
+		t.read().extract()
 	}
-	helper.ErrsQueue(d.Err, prefix)
-	return d
+	errs.Queue(prefix, t.Err)
+	return t
 }
 
-func (d *TypeDocker) BuildTest() *TypeDocker {
-	prefix := d.myType + ".BuildTest"
-	if d.Err != nil {
-		return d
+func (t *TypeDocker) BuildTest() *TypeDocker {
+	prefix := t.MyType + ".BuildTest"
+	if t.Err != nil {
+		return t
 	}
-	if !d.init {
-		d.Err = errors.New("not initialized")
-		helper.ErrsQueue(d.Err, prefix)
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
+		errs.Queue(prefix, t.Err)
 	}
-	var cmd *helper.MyCmd
-	imgName := d.Pkg + ":" + "auto_docker"
-	if d.Err == nil {
+	var myCmd *cmd.Cmd
+	imgName := t.Pkg + ":" + "auto_docker"
+	if t.Err == nil {
 		// RUN_CMD "docker build --quiet -t ${_img} ."
 		args := []string{"build", "--quiet", "-t", imgName, "."}
-		cmd = helper.MyCmdRun("docker", &args, &d.Dir)
-		d.Err = cmd.Err
+		myCmd = cmd.Run("docker", &args, &t.Dir)
+		t.Err = myCmd.Err
 	}
-	if d.Err == nil {
+	if t.Err == nil {
 		// RUN_CMD "docker image rm ${_img}"
 		args := []string{"image", "rm", imgName}
-		cmd = helper.MyCmdRun("docker", &args, &d.Dir)
-		d.Err = cmd.Err
+		myCmd = cmd.Run("docker", &args, &t.Dir)
+		t.Err = myCmd.Err
 	}
-	if Flag.Verbose || Flag.Debug {
-		if d.Err == nil {
-			helper.Report(imgName+": Success", prefix, false, true)
+	if t.Verbose || t.Debug {
+		if t.Err == nil {
+			ezlog.Log().N(prefix).N(imgName).Msg("Success").Out()
 		} else {
-			helper.Report(imgName+": Failed", prefix, false, true)
+			ezlog.Log().N(prefix).N(imgName).Msg("Failed").Out()
 		}
 	}
-	return d
+	return t
 }
 
-func (d *TypeDocker) Dump() *TypeDocker {
-	prefix := d.myType + ".Dump"
-	if d.Err != nil {
-		return d
+func (t *TypeDocker) Dump() *TypeDocker {
+	prefix := t.MyType + ".Dump"
+	if t.Err != nil {
+		return t
 	}
-	if !d.init {
-		d.Err = errors.New("not initialized")
-		helper.ErrsQueue(d.Err, prefix)
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
+		errs.Queue(prefix, t.Err)
 	}
-	if d.Err == nil {
-		helper.Report(d, prefix, false, false)
+	if t.Err == nil {
+		ezlog.Log().Nn(prefix).M(t).Out()
 	}
-	return d
+	return t
 }
 
 // Update `Content`
-func (d *TypeDocker) Update() *TypeDocker {
-	prefix := d.myType + ".Update"
-	if d.Err != nil {
-		return d
+func (t *TypeDocker) Update(dbAlpine *TypeDbAlpine) *TypeDocker {
+	prefix := t.MyType + ".Update"
+	if t.Err != nil {
+		return t
 	}
-	if !d.init {
-		d.Err = errors.New("not initialized")
-		helper.ErrsQueue(d.Err, prefix)
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
+		errs.Queue(prefix, t.Err)
 	}
-	if d.Err == nil {
+	if t.Err == nil {
 		// Check for new version
-		for _, b := range d.Repo {
-			verNew := *DbAlpine.PkgVerGet(d.Pkg, d.Branch, b)
-			if DbAlpine.Err == nil {
-				if verNew > d.VerNew {
-					d.VerNew = verNew
-					helper.ReportDebug(d.Branch+"/"+b+":"+d.Pkg+":"+verNew+">"+d.VerCurr, prefix, false, true)
+		for _, b := range t.Repo {
+			verNew := *dbAlpine.PkgVerGet(t.Pkg, t.Branch, b)
+			if dbAlpine.Err == nil {
+				if verNew > t.VerNew {
+					t.VerNew = verNew
+					ezlog.Debug().N(prefix).N(t.Branch + "/" + b).N(t.Pkg).M(verNew).M(">").M(t.VerCurr).Out()
 				}
 			}
 		}
-		if d.VerNew > d.VerCurr {
-			helper.ReportDebug(d.Pkg+": "+d.VerCurr+" -> "+d.VerNew, prefix, false, true)
-			for index := range d.Content {
-				d.Content[index] = strings.ReplaceAll(d.Content[index], d.VerCurr, d.VerNew)
+		if t.VerNew > t.VerCurr {
+			ezlog.Debug().N(prefix).N(t.Pkg).M(t.VerCurr).M("->").M(t.VerNew).Out()
+			for index := range t.Content {
+				t.Content[index] = strings.ReplaceAll(t.Content[index], t.VerCurr, t.VerNew)
 			}
 		}
 	}
-	return d
+	return t
 }
 
 // Write `Content` to Dockerfile
-func (d *TypeDocker) Write() *TypeDocker {
-	prefix := d.myType + ".Write"
-	if d.Err != nil {
-		return d
+func (t *TypeDocker) Write() *TypeDocker {
+	prefix := t.MyType + ".Write"
+	if t.Err != nil {
+		return t
 	}
-	if !d.init {
-		d.Err = errors.New("not initialized")
-		helper.ErrsQueue(d.Err, prefix)
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
+		errs.Queue(prefix, t.Err)
 	}
-	if d.Err == nil {
-		fileStats, err := os.Stat(d.FilePath)
+	if t.Err == nil {
+		fileStats, err := os.Stat(t.FilePath)
 		if err != nil {
 			// Should never happen at this stage, but ...
-			d.Err = err
+			t.Err = err
 		} else {
-			helper.FileStrArrWrite(d.FilePath, d.Content, fileStats.Mode())
+			file.ArrayWrite(t.FilePath, t.Content, fileStats.Mode())
 		}
 	}
-	helper.ErrsQueue(d.Err, prefix)
-	return d
+	errs.Queue(prefix, t.Err)
+	return t
 }
 
 // Read Dockerfile into `Content`
-func (d *TypeDocker) read() *TypeDocker {
-	prefix := d.myType + ".read"
-	if d.Err != nil {
-		return d
+func (t *TypeDocker) read() *TypeDocker {
+	prefix := t.MyType + ".read"
+	if t.Err != nil {
+		return t
 	}
-	if !d.init {
-		d.Err = errors.New("not initialized")
-		helper.ErrsQueue(d.Err, prefix)
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
+		errs.Queue(prefix, t.Err)
 	}
-	if d.Err == nil {
-		d.Content, d.Err = helper.FileStrArrRead(d.FilePath)
-		if d.Err != nil {
-			d.Err = errors.New(d.FilePath + " not found")
-			helper.ErrsQueue(d.Err, prefix)
+	if t.Err == nil {
+		t.Content, t.Err = file.ArrayRead(t.FilePath)
+		if t.Err != nil {
+			t.Err = errors.New(t.FilePath + " not found")
+			errs.Queue(prefix, t.Err)
 		}
 	}
-	return d
+	return t
 }
 
 // Extract information from `Content`
-func (d *TypeDocker) extract() *TypeDocker {
-	prefix := d.myType + ".extract"
-	if d.Err != nil {
-		return d
+func (t *TypeDocker) extract() *TypeDocker {
+	prefix := t.MyType + ".extract"
+	if t.Err != nil {
+		return t
 	}
-	if !d.init {
-		d.Err = errors.New("not initialized")
-		helper.ErrsQueue(d.Err, prefix)
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
+		errs.Queue(prefix, t.Err)
 	}
-	if d.Err == nil {
+	if t.Err == nil {
 		testing := "testing"
-		branchTesting := d.Branch + "/" + testing
-		for _, line := range d.Content {
+		branchTesting := t.Branch + "/" + testing
+		for _, line := range t.Content {
 			words := strings.Split(line, " ")
 			switch strings.ToLower(words[0]) {
 			case "from":
-				helper.ReportDebug(line, prefix, false, true)
-				d.Distro = words[1]
+				ezlog.Debug().N(prefix).M(line).Out()
+				t.Distro = words[1]
 				// detect branch, eg. "alpine:edge" -> "edge"
 				tmp := strings.Split(words[1], ":")
 				if len(tmp) == 2 {
-					d.Distro = tmp[0]
-					d.Branch = tmp[1]
+					t.Distro = tmp[0]
+					t.Branch = tmp[1]
 				}
 			case "label":
-				helper.ReportDebug(words[1], prefix, false, true)
+				ezlog.Debug().N(prefix).M(words[1]).Out()
 				label := strings.Split(words[1], "=")
 				switch strings.ToLower(label[0]) {
 				case "version":
-					d.VerCurr = strings.ReplaceAll(label[1], "\"", "")
-					d.VerNew = ""
+					t.VerCurr = strings.ReplaceAll(label[1], "\"", "")
+					t.VerNew = ""
 				case "name":
-					d.Pkg = strings.ReplaceAll(label[1], "\"", "")
+					t.Pkg = strings.ReplaceAll(label[1], "\"", "")
 				}
 			default:
 				// detect branch testing
 				if strings.Contains(line, branchTesting) {
-					if !helper.StrArrayPtrContain(&d.Repo, &testing) {
-						d.Repo = append(d.Repo, testing)
+					if !str.ArrayContains(&t.Repo, &testing) {
+						t.Repo = append(t.Repo, testing)
 					}
 				}
 			}
 		}
 	}
-	return d
+	return t
 }

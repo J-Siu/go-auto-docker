@@ -31,127 +31,129 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/J-Siu/go-helper"
+	"github.com/J-Siu/go-basestruct"
+	"github.com/J-Siu/go-helper/v2/errs"
+	"github.com/J-Siu/go-helper/v2/ezlog"
+	"github.com/J-Siu/go-helper/v2/file"
+	"github.com/J-Siu/go-helper/v2/strany"
 )
 
 type TypeLicense struct {
-	Err    error
-	init   bool
-	myType string
+	*basestruct.Base
 
 	Content  []string
 	Dir      string
 	FilePath string
 }
 
-func (r *TypeLicense) Init(dir string) *TypeLicense {
-	r.init = true
-	r.myType = "TypeLicense"
-	prefix := r.myType + ".Init"
+func (t *TypeLicense) New(dir, fileLicense *string) *TypeLicense {
+	t.Base = new(basestruct.Base)
+	t.Initialized = true
+	t.MyType = "TypeLicense"
+	prefix := t.MyType + ".Init"
 
-	r.Dir = dir
-	r.FilePath = path.Join(r.Dir, Conf.FileLicense)
-	helper.ReportDebug(r, prefix, false, true)
-	if !helper.IsRegularFile(r.FilePath) {
-		r.Err = errors.New(r.FilePath + " not found")
-		helper.ErrsQueue(r.Err, prefix)
+	t.Dir = *dir
+	t.FilePath = path.Join(t.Dir, *fileLicense)
+	ezlog.Debug().Nn(prefix).M(t).Out()
+	if !file.IsRegularFile(t.FilePath) {
+		t.Err = errors.New(t.FilePath + " not found")
+		errs.Queue(prefix, t.Err)
 	}
-	return r
+	return t
 }
 
-func (r *TypeLicense) Dump() *TypeLicense {
-	prefix := r.myType + ".Dump"
-	if r.Err != nil {
-		return r
+func (t *TypeLicense) Dump() *TypeLicense {
+	prefix := t.MyType + ".Dump"
+	if t.Err != nil {
+		return t
 	}
-	if !r.init {
-		r.Err = errors.New("not initialized")
-		helper.ErrsQueue(r.Err, prefix)
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
+		errs.Queue(prefix, t.Err)
 	}
-	if r.Err == nil {
-		helper.Report(r, prefix, false, false)
+	if t.Err == nil {
+		ezlog.Log().Nn(prefix).M(t).Out()
 	}
-	return r
+	return t
 }
 
-func (r *TypeLicense) Update() *TypeLicense {
-	prefix := r.myType + ".Update"
-	if r.Err != nil {
-		return r
+func (t *TypeLicense) Update() *TypeLicense {
+	prefix := t.MyType + ".Update"
+	if t.Err != nil {
+		return t
 	}
-	if !r.init {
-		r.Err = errors.New("not initialized")
-		helper.ErrsQueue(r.Err, prefix)
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
+		errs.Queue(prefix, t.Err)
 	}
-	if r.Err == nil {
-		for lineNum := range r.Content {
-			if r.Err == nil {
-				helper.ReportDebug(&r.Content[lineNum], prefix, false, true)
-				r.
-					updateLicenseYear(&r.Content[lineNum])
-				helper.ReportDebug(&r.Content[lineNum], prefix, false, true)
+	if t.Err == nil {
+		for lineNum := range t.Content {
+			if t.Err == nil {
+				ezlog.Debug().N(prefix).M(&t.Content[lineNum]).Out()
+				t.updateLicenseYear(&t.Content[lineNum])
+				ezlog.Debug().N(prefix).M(&t.Content[lineNum]).Out()
 			}
 		}
 	}
-	return r
+	return t
 }
 
 // Read README.md into `Content`
-func (r *TypeLicense) Read() *TypeLicense {
-	prefix := r.myType + ".Read"
-	if r.Err != nil {
-		return r
+func (t *TypeLicense) Read() *TypeLicense {
+	prefix := t.MyType + ".Read"
+	if t.Err != nil {
+		return t
 	}
-	if !r.init {
-		r.Err = errors.New("not initialized")
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
 	}
-	if r.Err == nil {
-		r.Content, r.Err = helper.FileStrArrRead(r.FilePath)
-		if r.Err != nil {
-			r.Err = errors.New(r.FilePath + " not found")
+	if t.Err == nil {
+		t.Content, t.Err = file.ArrayRead(t.FilePath)
+		if t.Err != nil {
+			t.Err = errors.New(t.FilePath + " not found")
 		} else {
 		}
 	}
-	helper.ErrsQueue(r.Err, prefix)
-	return r
+	errs.Queue(prefix, t.Err)
+	return t
 }
 
 // Write `Content` into README.md
-func (r *TypeLicense) Write() *TypeLicense {
-	prefix := r.myType + ".Write"
-	if r.Err != nil {
-		return r
+func (t *TypeLicense) Write() *TypeLicense {
+	prefix := t.MyType + ".Write"
+	if t.Err != nil {
+		return t
 	}
-	if !r.init {
-		r.Err = errors.New("not initialized")
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
 	}
-	if r.Err == nil {
-		fileStats, err := os.Stat(r.FilePath)
+	if t.Err == nil {
+		fileStats, err := os.Stat(t.FilePath)
 		if err != nil {
 			// Should never happen at this stage, but ...
-			r.Err = err
+			t.Err = err
 		} else {
-			helper.FileStrArrWrite(r.FilePath, r.Content, fileStats.Mode())
+			file.ArrayWrite(t.FilePath, t.Content, fileStats.Mode())
 		}
 	}
-	helper.ErrsQueue(r.Err, prefix)
-	return r
+	errs.Queue(prefix, t.Err)
+	return t
 }
 
 // This work for:
 //   - Copyright (c) xxxx
 //   - Copyright © xxxx
-func (r *TypeLicense) updateLicenseYear(line *string) *TypeLicense {
-	prefix := r.myType + ".updateLicenseYear"
+func (t *TypeLicense) updateLicenseYear(line *string) *TypeLicense {
+	prefix := t.MyType + ".updateLicenseYear"
 	c := []string{"(c)", "©"}
 	cRaw := []string{`\(c\)`, `©`}
 	copyright := "Copyright"
-	year, _ := helper.NumToStr(time.Now().Year())
+	year := *strany.Any(time.Now().Year())
 	for i := range c {
 		// "(?i)" <- means case insensitive
 		re := regexp.MustCompile("(?i)" + copyright + " " + cRaw[i] + ` \d\d\d\d`)
 		*line = re.ReplaceAllString(*line, copyright+" "+c[i]+" "+year)
 	}
-	helper.ReportDebug(line, prefix, false, true)
-	return r
+	ezlog.Debug().N(prefix).M(line).Out()
+	return t
 }

@@ -27,25 +27,30 @@ package cmd
 import (
 	"os"
 
+	"github.com/J-Siu/go-auto-docker/global"
 	"github.com/J-Siu/go-auto-docker/lib"
-
-	"github.com/J-Siu/go-helper"
+	"github.com/J-Siu/go-helper/v2/errs"
+	"github.com/J-Siu/go-helper/v2/ezlog"
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
 	Use:     "go-auto-docker",
-	Version: lib.Version,
+	Version: global.Version,
 	Short:   "Mass updating single package Docker project base on Alpine Linux packages.",
 	Long:    `Automate update for README.md change log, apply tag according to package version. Also handle test build, git commit.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		helper.Debug = lib.Flag.Debug
-		helper.ReportDebug(lib.Version, "Version", false, true)
-		lib.Conf.Init()
-		helper.ReportDebug(&lib.Flag, "Flag", false, false)
+		ezlog.SetLogLevel(ezlog.ErrLevel)
+		if global.Flag.Debug {
+			ezlog.SetLogLevel(ezlog.DebugLevel)
+		}
+		ezlog.Debug().N("Version").Mn(global.Version).Nn("Flag").M(&global.Flag).Out()
+		global.Conf.New()
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
-		helper.Report(helper.Errs, "Errors", true, false)
+		if !errs.IsEmpty() {
+			ezlog.Err().M(errs.Errs).Out()
+		}
 	},
 }
 
@@ -57,7 +62,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Debug, "debug", "d", false, "enable debug")
-	rootCmd.PersistentFlags().BoolVarP(&lib.Flag.Verbose, "verbose", "v", false, "enable debug")
-	rootCmd.PersistentFlags().StringVarP(&lib.Conf.FileConf, "config", "", lib.ConfDefault.FileConf, "config file")
+	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Debug, "debug", "d", false, "enable debug")
+	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Verbose, "verbose", "v", false, "enable debug")
+	rootCmd.PersistentFlags().StringVarP(&global.Conf.FileConf, "config", "", lib.ConfDefault.FileConf, "config file")
 }

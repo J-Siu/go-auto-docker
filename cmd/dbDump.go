@@ -25,7 +25,7 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"github.com/J-Siu/go-auto-docker/lib"
+	"github.com/J-Siu/go-auto-docker/global"
 	"github.com/spf13/cobra"
 )
 
@@ -35,8 +35,8 @@ var dbDumpCmd = &cobra.Command{
 	Aliases: []string{"d"},
 	Short:   "Dump database",
 	Run: func(cmd *cobra.Command, args []string) {
-		lib.DbAlpine.
-			Init().
+		global.DbAlpine.
+			New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch).
 			DbConnect().
 			DbDump()
 	},

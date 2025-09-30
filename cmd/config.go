@@ -23,8 +23,8 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"github.com/J-Siu/go-auto-docker/lib"
-	"github.com/J-Siu/go-helper"
+	"github.com/J-Siu/go-auto-docker/global"
+	"github.com/J-Siu/go-helper/v2/ezlog"
 	"github.com/spf13/cobra"
 )
 
@@ -34,7 +34,7 @@ var configCmd = &cobra.Command{
 	Aliases: []string{"c", "conf"},
 	Short:   "Print configurations",
 	Run: func(cmd *cobra.Command, args []string) {
-		helper.Report(&lib.Conf, "Config", true, false)
+		ezlog.Log().Nn("Config").M(&global.Conf).Out()
 	},
 }
 

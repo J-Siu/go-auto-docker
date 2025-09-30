@@ -32,24 +32,26 @@ import (
 	"strings"
 	"time"
 
-	"github.com/J-Siu/go-helper"
+	"github.com/J-Siu/go-basestruct"
+	"github.com/J-Siu/go-helper/v2/errs"
+	"github.com/J-Siu/go-helper/v2/ezlog"
+	"github.com/J-Siu/go-helper/v2/file"
+	"github.com/J-Siu/go-helper/v2/strany"
 )
 
 type TypeReadme struct {
-	Err    error
-	init   bool
-	myType string
+	*basestruct.Base
 
-	Content  []string
-	Dir      string
-	FilePath string
+	Content  []string `json:"content,omitempty"`
+	Dir      string   `json:"dir,omitempty"`
+	FilePath string   `json:"file_path,omitempty"`
 
-	TagReadmeLogStart string
-	TagReadmeLogEnd   string
+	TagReadmeLogStart string `json:"tag_readme_log_start,omitempty"`
+	TagReadmeLogEnd   string `json:"tag_readme_log_end,omitempty"`
 
-	Pkg     string
-	VerCurr string
-	VerNew  string
+	Pkg     string `json:"pkg,omitempty"`
+	VerCurr string `json:"ver_curr,omitempty"`
+	VerNew  string `json:"ver_new,omitempty"`
 
 	changeLogStart bool
 	changeLogEnd   bool
@@ -57,155 +59,156 @@ type TypeReadme struct {
 	newLogContent  string
 }
 
-func (r *TypeReadme) Init(dir string, pkg string, verCurr string, verNew string) *TypeReadme {
-	r.init = true
-	r.myType = "TypeReadme"
-	r.Dir = dir
-	r.FilePath = path.Join(r.Dir, Conf.FileReadme)
-	r.TagReadmeLogStart = Conf.TagReadmeLogStart
-	r.TagReadmeLogEnd = Conf.TagReadmeLogEnd
+func (t *TypeReadme) New(dir, pkg, verCurr, verNew, fileReadme, tagReadmeLogStart, tagReadmeLogEnd *string) *TypeReadme {
+	t.Base = new(basestruct.Base)
+	t.Initialized = true
+	t.MyType = "TypeReadme"
+	t.Dir = *dir
+	t.FilePath = path.Join(t.Dir, *fileReadme)
+	t.TagReadmeLogStart = *tagReadmeLogStart
+	t.TagReadmeLogEnd = *tagReadmeLogEnd
 
-	r.Pkg = pkg
-	r.VerCurr = verCurr
-	r.VerNew = verNew
+	t.Pkg = *pkg
+	t.VerCurr = *verCurr
+	t.VerNew = *verNew
 
-	prefix := r.myType + ".Init"
-	helper.ReportDebug(r, prefix, false, true)
-	if !helper.IsRegularFile(r.FilePath) {
-		r.Err = errors.New("TypeReadme.Init: " + r.FilePath + " not found")
-		helper.ErrsQueue(r.Err, prefix)
+	prefix := t.MyType + ".Init"
+	ezlog.Debug().Nn(prefix).M(t).Out()
+	if !file.IsRegularFile(t.FilePath) {
+		t.Err = errors.New("TypeReadme.Init: " + t.FilePath + " not found")
+		errs.Queue(prefix, t.Err)
 	}
-	return r
+	return t
 }
 
-func (r *TypeReadme) Dump() *TypeReadme {
-	prefix := r.myType + ".Dump"
-	if r.Err != nil {
-		return r
+func (t *TypeReadme) Dump() *TypeReadme {
+	prefix := t.MyType + ".Dump"
+	if t.Err != nil {
+		return t
 	}
-	if !r.init {
-		r.Err = errors.New("not initialized")
-		helper.ErrsQueue(r.Err, prefix)
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
+		errs.Queue(prefix, t.Err)
 	}
-	if r.Err == nil {
-		helper.Report(r, prefix, false, false)
+	if t.Err == nil {
+		ezlog.Log().Nn(prefix).M(t).Out()
 	}
-	return r
+	return t
 }
 
-func (r *TypeReadme) Update() *TypeReadme {
-	prefix := r.myType + ".Update"
-	if r.Err != nil {
-		return r
+func (t *TypeReadme) Update() *TypeReadme {
+	prefix := t.MyType + ".Update"
+	if t.Err != nil {
+		return t
 	}
-	if !r.init {
-		r.Err = errors.New("not initialized")
-		helper.ErrsQueue(r.Err, prefix)
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
+		errs.Queue(prefix, t.Err)
 	}
-	if r.Err == nil {
-		if r.VerNew > r.VerCurr {
-			helper.ReportDebug(r.Pkg+": "+r.VerCurr+" -> "+r.VerNew, prefix, false, true)
-			r.changeLogStart = false
-			r.changeLogEnd = false
-			r.newLogHeader = "- " + r.VerNew
-			r.newLogContent = "  - Auto update to " + r.VerNew
+	if t.Err == nil {
+		if t.VerNew > t.VerCurr {
+			ezlog.Debug().N(prefix).N(t.Pkg).M(t.VerCurr).M("->").M(t.VerNew).Out()
+			t.changeLogStart = false
+			t.changeLogEnd = false
+			t.newLogHeader = "- " + t.VerNew
+			t.newLogContent = "  - Auto update to " + t.VerNew
 			// for lineNum := range r.Content {
-			for lineNum := range r.Content {
-				if r.Err == nil {
-					helper.ReportDebug(&r.Content[lineNum], prefix, false, true)
-					r.
-						updateLog(&r.Content[lineNum]).
-						updateLicenseYear(&r.Content[lineNum])
-					helper.ReportDebug(&r.Content[lineNum], prefix, false, true)
+			for lineNum := range t.Content {
+				if t.Err == nil {
+					ezlog.Debug().N(prefix).M(&t.Content[lineNum]).Out()
+					t.
+						updateLog(&t.Content[lineNum]).
+						updateLicenseYear(&t.Content[lineNum])
+					ezlog.Debug().N(prefix).M(&t.Content[lineNum]).Out()
 				}
 			}
 		}
 	}
-	return r
+	return t
 }
 
 // Read README.md into `Content`
-func (r *TypeReadme) Read() *TypeReadme {
-	prefix := r.myType + ".Read"
-	if r.Err != nil {
-		return r
+func (t *TypeReadme) Read() *TypeReadme {
+	prefix := t.MyType + ".Read"
+	if t.Err != nil {
+		return t
 	}
-	if !r.init {
-		r.Err = errors.New("not initialized")
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
 	}
-	if r.Err == nil {
-		r.Content, r.Err = helper.FileStrArrRead(r.FilePath)
-		if r.Err != nil {
-			r.Err = errors.New(r.FilePath + " not found")
+	if t.Err == nil {
+		t.Content, t.Err = file.ArrayRead(t.FilePath)
+		if t.Err != nil {
+			t.Err = errors.New(t.FilePath + " not found")
 		} else {
 		}
 	}
-	helper.ErrsQueue(r.Err, prefix)
-	return r
+	errs.Queue(prefix, t.Err)
+	return t
 }
 
 // Write `Content` into README.md
-func (r *TypeReadme) Write() *TypeReadme {
-	prefix := r.myType + ".Write"
-	if r.Err != nil {
-		return r
+func (t *TypeReadme) Write() *TypeReadme {
+	prefix := t.MyType + ".Write"
+	if t.Err != nil {
+		return t
 	}
-	if !r.init {
-		r.Err = errors.New("not initialized")
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
 	}
-	if r.Err == nil {
-		fileStats, err := os.Stat(r.FilePath)
+	if t.Err == nil {
+		fileStats, err := os.Stat(t.FilePath)
 		if err != nil {
 			// Should never happen at this stage, but ...
-			r.Err = err
+			t.Err = err
 		} else {
-			helper.FileStrArrWrite(r.FilePath, r.Content, fileStats.Mode())
+			file.ArrayWrite(t.FilePath, t.Content, fileStats.Mode())
 		}
 	}
-	helper.ErrsQueue(r.Err, prefix)
-	return r
+	errs.Queue(prefix, t.Err)
+	return t
 }
 
-func (r *TypeReadme) updateLog(line *string) *TypeReadme {
-	prefix := r.myType + ".updateLog"
-	if strings.EqualFold(*line, r.TagReadmeLogStart) {
-		r.changeLogStart = true
-		helper.ReportDebug("changeStart", prefix, false, true)
+func (t *TypeReadme) updateLog(line *string) *TypeReadme {
+	prefix := t.MyType + ".updateLog"
+	if strings.EqualFold(*line, t.TagReadmeLogStart) {
+		t.changeLogStart = true
+		ezlog.Debug().N(prefix).TxtStart().Out()
 	}
-	if !r.changeLogEnd && r.changeLogStart {
-		helper.ReportDebug("changeStarted "+*line, prefix, false, true)
-		if strings.Contains(*line, r.newLogHeader) {
+	if !t.changeLogEnd && t.changeLogStart {
+		ezlog.Debug().N(prefix).M("Change").TxtStart().M(line).Out()
+		if strings.Contains(*line, t.newLogHeader) {
 			// Something wrong if new log header already exist
-			r.Err = errors.New("change log already contains " + r.VerNew)
-			helper.ErrsQueue(r.Err, prefix)
+			t.Err = errors.New("change log already contains " + t.VerNew)
+			errs.Queue(prefix, t.Err)
 		}
-		if r.Err == nil && strings.Contains(*line, r.TagReadmeLogEnd) {
-			*line = r.newLogHeader + "\n" + r.newLogContent + "\n" + *line
-			helper.ReportDebug(line, prefix, false, false)
+		if t.Err == nil && strings.Contains(*line, t.TagReadmeLogEnd) {
+			*line = t.newLogHeader + "\n" + t.newLogContent + "\n" + *line
+			ezlog.Debug().N(prefix).M(line).Out()
 		}
 	}
-	if strings.Contains(*line, r.TagReadmeLogEnd) {
-		r.changeLogEnd = true
-		helper.ReportDebug("changeEnd", prefix, false, true)
+	if strings.Contains(*line, t.TagReadmeLogEnd) {
+		t.changeLogEnd = true
+		ezlog.Debug().N(prefix).M("Change").TxtEnd().Out()
 	}
-	helper.ReportDebug(line, prefix, false, true)
-	return r
+	ezlog.Debug().N(prefix).M(line).Out()
+	return t
 }
 
 // This work for:
 //   - Copyright (c) xxxx
 //   - Copyright © xxxx
-func (r *TypeReadme) updateLicenseYear(line *string) *TypeReadme {
-	prefix := r.myType + ".updateLicenseYear"
+func (t *TypeReadme) updateLicenseYear(line *string) *TypeReadme {
+	prefix := t.MyType + ".updateLicenseYear"
 	c := []string{"(c)", "©"}
 	cRaw := []string{`\(c\)`, `©`}
 	copyright := "Copyright"
-	year, _ := helper.NumToStr(time.Now().Year())
+	year := *strany.Any(time.Now().Year())
 	for i := range c {
 		// "(?i)" <- means case insensitive
 		re := regexp.MustCompile("(?i)" + copyright + " " + cRaw[i] + ` \d\d\d\d`)
 		*line = re.ReplaceAllString(*line, copyright+" "+c[i]+" "+year)
 	}
-	helper.ReportDebug(line, prefix, false, true)
-	return r
+	ezlog.Debug().N(prefix).M(line).Out()
+	return t
 }

@@ -22,15 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package lib
+package global
+
+import "github.com/J-Siu/go-auto-docker/lib"
 
 var (
-	Version = "v0.5.0"
+	Version = "v0.5.1"
 
-	Conf         TypeConf
-	Flag         TypeFlag
-	FlagUpdate   TypeFlagUpdate
-	FlagDbSearch TypeFlagDbSearch
+	Conf         lib.TypeConf
+	Flag         lib.TypeFlag
+	FlagUpdate   lib.TypeFlagUpdate
+	FlagDbSearch lib.TypeFlagDbSearch
 
-	DbAlpine TypeDbAlpine
+	DbAlpine lib.TypeDbAlpine
 )

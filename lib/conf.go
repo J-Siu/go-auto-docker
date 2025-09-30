@@ -23,7 +23,10 @@ THE SOFTWARE.
 package lib
 
 import (
-	"github.com/J-Siu/go-helper"
+	"github.com/J-Siu/go-basestruct"
+	"github.com/J-Siu/go-helper/v2/errs"
+	"github.com/J-Siu/go-helper/v2/ezlog"
+	"github.com/J-Siu/go-helper/v2/file"
 	"github.com/spf13/viper"
 )
 
@@ -42,9 +45,7 @@ var ConfDefault = TypeConf{
 }
 
 type TypeConf struct {
-	Err    error
-	myType string
-	init   bool
+	*basestruct.Base
 
 	DirCache    string `json:"DirCache"`    // Directory name, not full path, of cache. Default: ~/.cache/go-auto-docker
 	DirDB       string `json:"DirDB"`       // Directory name, not full path, of database. Default: db
@@ -60,58 +61,59 @@ type TypeConf struct {
 	TagReadmeLogEnd   string `json:"ReadmeLogEnd"`   // Default: <!--CHANGE-LOG-END-->
 }
 
-func (c *TypeConf) Init() *TypeConf {
-	c.init = true
-	c.myType = "TypeConf"
-	prefix := c.myType + ".Init"
+func (t *TypeConf) New() *TypeConf {
+	t.Base = new(basestruct.Base)
+	t.Initialized = true
+	t.MyType = "TypeConf"
+	prefix := t.MyType + ".Init"
 
-	c.setDefault()
-	helper.ReportDebug(c, prefix+": Default + Flag", false, true)
+	t.setDefault()
+	ezlog.Debug().N(prefix).Nn("Default").M(t).Out()
 
-	c.readFileConf()
-	helper.ReportDebug(c, prefix+": Raw", false, true)
+	t.readFileConf()
+	ezlog.Debug().N(prefix).Nn("Raw").M(t).Out()
 
-	c.expand()
-	helper.ReportDebug(c, prefix+": Expand", false, true)
+	t.expand()
+	ezlog.Debug().N(prefix).Nn("Expand").M(t).Out()
 
-	return c
+	return t
 }
 
 // viper handle file and unmarshal
-func (c *TypeConf) readFileConf() *TypeConf {
-	prefix := c.myType + ".readFileConf"
+func (t *TypeConf) readFileConf() *TypeConf {
+	prefix := t.MyType + ".readFileConf"
 	viper.SetConfigType("json")
-	viper.SetConfigFile(helper.TildeEnvExpand(Conf.FileConf))
+	viper.SetConfigFile(file.TildeEnvExpand(t.FileConf))
 	viper.AutomaticEnv()
-	c.Err = viper.ReadInConfig()
+	t.Err = viper.ReadInConfig()
 
-	if c.Err == nil {
-		c.Err = viper.Unmarshal(&c)
+	if t.Err == nil {
+		t.Err = viper.Unmarshal(&t)
 	}
 
-	helper.ErrsQueue(c.Err, prefix)
+	errs.Queue(prefix, t.Err)
 
-	return c
+	return t
 }
 
 // Should be called before reading config file
-func (c *TypeConf) setDefault() *TypeConf {
-	if c.FileConf == "" {
-		c.FileConf = ConfDefault.FileConf
+func (t *TypeConf) setDefault() *TypeConf {
+	if t.FileConf == "" {
+		t.FileConf = ConfDefault.FileConf
 	}
-	c.DirCache = ConfDefault.DirCache
-	c.DirDB = ConfDefault.DirDB
-	c.DirRepo = ConfDefault.DirRepo
-	c.FileLicense = ConfDefault.FileLicense
-	c.FileReadme = ConfDefault.FileReadme
-	c.AlpineBranch = ConfDefault.AlpineBranch
-	c.TagReadmeLogEnd = ConfDefault.TagReadmeLogEnd
-	c.TagReadmeLogStart = ConfDefault.TagReadmeLogStart
-	return c
+	t.DirCache = ConfDefault.DirCache
+	t.DirDB = ConfDefault.DirDB
+	t.DirRepo = ConfDefault.DirRepo
+	t.FileLicense = ConfDefault.FileLicense
+	t.FileReadme = ConfDefault.FileReadme
+	t.AlpineBranch = ConfDefault.AlpineBranch
+	t.TagReadmeLogEnd = ConfDefault.TagReadmeLogEnd
+	t.TagReadmeLogStart = ConfDefault.TagReadmeLogStart
+	return t
 }
 
-func (c *TypeConf) expand() *TypeConf {
-	c.DirCache = helper.TildeEnvExpand(c.DirCache)
-	c.FileConf = helper.TildeEnvExpand(c.FileConf)
-	return c
+func (t *TypeConf) expand() *TypeConf {
+	t.DirCache = file.TildeEnvExpand(t.DirCache)
+	t.FileConf = file.TildeEnvExpand(t.FileConf)
+	return t
 }

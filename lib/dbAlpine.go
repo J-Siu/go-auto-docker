@@ -33,7 +33,11 @@ import (
 	"path"
 	"strings"
 
-	"github.com/J-Siu/go-helper"
+	"github.com/J-Siu/go-basestruct"
+	"github.com/J-Siu/go-helper/v2/array"
+	"github.com/J-Siu/go-helper/v2/cmd"
+	"github.com/J-Siu/go-helper/v2/errs"
+	"github.com/J-Siu/go-helper/v2/ezlog"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -53,9 +57,7 @@ var DbAlpineDefault = TypeDbAlpine{
 
 // Alpine package database struct base on repo, branch and arch
 type TypeDbAlpine struct {
-	Err    error
-	init   bool
-	myType string
+	*basestruct.Base
 
 	Db        *gorm.DB
 	DirDb     string // full path of base database (db file + APKINDEX) directory
@@ -78,270 +80,271 @@ type TypeDbAlpineRecord struct {
 	Ver    string `json:"Ver"`
 }
 
-func (a *TypeDbAlpine) Init() *TypeDbAlpine {
-	a.init = true
-	a.myType = "TypeDbAlpine"
-	prefix := a.myType + ".init"
-	helper.ReportDebug("-- Start", prefix, false, true)
+func (t *TypeDbAlpine) New(dirCache, dirDb *string, alpineBranch *[]string) *TypeDbAlpine {
+	t.Base = new(basestruct.Base)
+	t.Initialized = true
+	t.MyType = "TypeDbAlpine"
+	prefix := t.MyType + ".init"
+	ezlog.Debug().N(prefix).TxtStart().Out()
 
-	a.setDefault()
+	t.DirDb = path.Join(*dirCache, *dirDb, t.Distro)
+	t.FileDb = path.Join(*dirCache, *dirDb, t.Distro, t.Distro+".db")
 
-	a.DirDb = path.Join(Conf.DirCache, Conf.DirDB, a.Distro)
-	a.FileDb = path.Join(Conf.DirCache, Conf.DirDB, a.Distro, a.Distro+".db")
+	t.setDefault(alpineBranch)
 
-	helper.ReportDebug(a, prefix, false, false)
-	helper.ReportDebug("-- End", prefix, false, true)
+	ezlog.Debug().Nn(prefix).M(t).Out()
 
-	return a
+	ezlog.Debug().N(prefix).TxtEnd().Out()
+	return t
 }
 
-func (a *TypeDbAlpine) setDefault() *TypeDbAlpine {
-	a.Arch = DbAlpineDefault.Arch
-	a.Repository = DbAlpineDefault.Repository
-	a.Distro = DbAlpineDefault.Distro
-	a.Branch = DbAlpineDefault.Branch
-	a.FileIndex = DbAlpineDefault.FileIndex
-	a.UrlBase = DbAlpineDefault.UrlBase
+func (t *TypeDbAlpine) setDefault(alpineBranch *[]string) *TypeDbAlpine {
+	t.Arch = DbAlpineDefault.Arch
+	t.Repository = DbAlpineDefault.Repository
+	t.Distro = DbAlpineDefault.Distro
+	t.Branch = DbAlpineDefault.Branch
+	t.FileIndex = DbAlpineDefault.FileIndex
+	t.UrlBase = DbAlpineDefault.UrlBase
 
-	if len(Conf.AlpineBranch) == 0 {
-		a.Branch = DbAlpineDefault.Branch
+	if len(*alpineBranch) == 0 {
+		t.Branch = DbAlpineDefault.Branch
 	} else {
-		a.Branch = Conf.AlpineBranch
+		t.Branch = *alpineBranch
 	}
 
-	return a
+	return t
 }
 
 // DBConnect
 //   - if database does not exist, an empty one will be created
-func (a *TypeDbAlpine) DbConnect() *TypeDbAlpine {
-	prefix := a.myType + ".DBConnect"
-	helper.ReportDebug("-- Start", prefix, false, true)
-	if a.Err != nil {
-		return a
+func (t *TypeDbAlpine) DbConnect() *TypeDbAlpine {
+	prefix := t.MyType + ".DBConnect"
+	ezlog.Debug().N(prefix).TxtStart().Out()
+	if t.Err != nil {
+		return t
 	}
-	if !a.init {
-		a.Err = errors.New("not initialized")
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
 	}
-	helper.ReportDebug(a.FileDb, prefix, false, true)
+	ezlog.Debug().N(prefix).M(t.FileDb).Out()
 
-	if a.Err == nil {
-		a.Err = os.MkdirAll(a.DirDb, os.ModePerm)
+	if t.Err == nil {
+		t.Err = os.MkdirAll(t.DirDb, os.ModePerm)
 	}
 
-	if a.Err == nil {
-		a.Db, a.Err = gorm.Open(
-			sqlite.Open(a.FileDb),
+	if t.Err == nil {
+		t.Db, t.Err = gorm.Open(
+			sqlite.Open(t.FileDb),
 			&gorm.Config{
 				QueryFields: true,
 				Logger:      logger.Default.LogMode(logger.Silent),
 			},
 		)
-		if a.Err != nil {
-			a.Err = errors.New("cannot open " + a.FileDb)
+		if t.Err != nil {
+			t.Err = errors.New("cannot open " + t.FileDb)
 		}
 	}
 
-	helper.ErrsQueue(a.Err, prefix)
+	errs.Queue(prefix, t.Err)
 
-	helper.ReportDebug("-- End", prefix, false, true)
-	return a
+	ezlog.Debug().N(prefix).TxtEnd().Out()
+	return t
 }
 
 // DbDump()
-//   - This must be called after TypeDbAlpine.Init()
+//   - This must be called after TypeDbAlpine.New()
 //   - DbDump DB to stdout
-func (a *TypeDbAlpine) DbDump() *TypeDbAlpine {
-	prefix := a.myType + ".DbDump"
-	helper.ReportDebug("-- Start", prefix, false, true)
+func (t *TypeDbAlpine) DbDump() *TypeDbAlpine {
+	prefix := t.MyType + ".DbDump"
+	ezlog.Debug().N(prefix).TxtStart().Out()
 
-	if a.Err != nil {
-		return a
+	if t.Err != nil {
+		return t
 	}
-	if !a.init {
-		a.Err = errors.New("not initialized")
-	}
-
-	if a.Db == nil {
-		a.Err = errors.New("database not connected")
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
 	}
 
-	var rows helper.MyArray[TypeDbAlpineRecord]
+	if t.Db == nil {
+		t.Err = errors.New("database not connected")
+	}
 
-	if a.Err == nil {
-		result := a.Db.
+	var rows array.Array[TypeDbAlpineRecord]
+
+	if t.Err == nil {
+		result := t.Db.
 			// Unscoped().
 			Select([]string{"Pkg", "Ver", "Repo", "Branch", "Arch"}).
 			Find(&rows)
-		a.Err = result.Error
+		t.Err = result.Error
 	}
 
-	if a.Err == nil {
-		helper.Report(rows, "", false, false)
-		helper.Report(len(rows), "Rows", false, true)
+	if t.Err == nil {
+		ezlog.Log().M(rows).Out()
+		ezlog.Log().N("Rows").M(len(rows)).Out()
 	}
 
-	helper.ErrsQueue(a.Err, prefix)
+	errs.Queue(prefix, t.Err)
 
-	helper.ReportDebug("-- End", prefix, false, true)
-	return a
+	ezlog.Debug().N(prefix).TxtEnd().Out()
+	return t
 }
 
 // Return immediately on error
-func (a *TypeDbAlpine) DbUpdate() *TypeDbAlpine {
-	prefix := a.myType + ".DbUpdate"
-	helper.ReportDebug("-- Start", prefix, false, true)
+func (t *TypeDbAlpine) DbUpdate() *TypeDbAlpine {
+	prefix := t.MyType + ".DbUpdate"
+	ezlog.Debug().N(prefix).TxtStart().Out()
 
-	if a.Err != nil {
-		return a
+	if t.Err != nil {
+		return t
 	}
-	if !a.init {
-		a.Err = errors.New("not initialized")
-	}
-
-	if a.Err == nil {
-		a.Err = os.RemoveAll(a.DirDb) // Delete first
-	}
-	if a.Err == nil {
-		a.DbConnect()
-	}
-	if a.Err == nil {
-		a.Db.AutoMigrate(&TypeDbAlpineRecord{})
-	}
-	if a.Err == nil {
-		a.Err = a.dbDownload()
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
 	}
 
-	helper.ErrsQueue(a.Err, prefix)
+	if t.Err == nil {
+		t.Err = os.RemoveAll(t.DirDb) // Delete first
+	}
+	if t.Err == nil {
+		t.DbConnect()
+	}
+	if t.Err == nil {
+		t.Db.AutoMigrate(&TypeDbAlpineRecord{})
+	}
+	if t.Err == nil {
+		t.Err = t.dbDownload()
+	}
 
-	helper.ReportDebug("-- End", prefix, false, true)
-	return a
+	errs.Queue(prefix, t.Err)
+
+	ezlog.Debug().N(prefix).TxtEnd().Out()
+	return t
 }
 
 // PkgSearch
 //   - Output result to stdout
 //   - Return immediately on error
-func (a *TypeDbAlpine) PkgSearch(pkg string) *TypeDbAlpine {
-	prefix := a.myType + ".PkgSearch"
-	helper.ReportDebug("-- Start", prefix, false, true)
+func (t *TypeDbAlpine) PkgSearch(pkg string, exact bool) *TypeDbAlpine {
+	prefix := t.MyType + ".PkgSearch"
+	ezlog.Debug().N(prefix).TxtStart().Out()
 
-	if a.Err != nil {
-		return a
+	if t.Err != nil {
+		return t
 	}
-	if !a.init {
-		a.Err = errors.New("not initialized")
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
 	}
 
-	if a.Db == nil {
-		a.Err = errors.New("database not connected")
+	if t.Db == nil {
+		t.Err = errors.New("database not connected")
 	}
 
 	var rows []TypeDbAlpineRecord
 
-	if a.Err == nil {
-		result := a.Db.
+	if t.Err == nil {
+		result := t.Db.
 			Unscoped().
 			Select([]string{"Pkg", "Ver", "Branch", "Repo", "Arch"})
-		if FlagDbSearch.Exact {
+		if exact {
 			result = result.Where(map[string]interface{}{"Pkg": pkg})
 		} else {
 			result = result.Where("Pkg LIKE ?", "%"+pkg+"%")
 		}
 		result = result.Find(&rows)
-		a.Err = result.Error
+		t.Err = result.Error
 	}
 
-	if a.Err == nil {
+	if t.Err == nil {
 		for _, r := range rows {
-			helper.Report(r.Pkg+" "+r.Ver+" "+r.Branch+" "+r.Repo+" "+r.Arch, "", true, false)
+			ezlog.Log().M(r.Pkg).M(r.Ver).M(r.Repo).M(r.Branch).M(r.Arch).Out()
 		}
 	}
 
-	helper.ErrsQueue(a.Err, prefix)
+	errs.Queue(prefix, t.Err)
 
-	helper.ReportDebug("-- End", prefix, false, true)
-	return a
+	ezlog.Debug().N(prefix).TxtEnd().Out()
+	return t
 }
 
-func (a *TypeDbAlpine) PkgVerGet(pkg string, branch string, repo string) (ver *string) {
-	prefix := a.myType + ".PkgVerGet"
-	helper.ReportDebug("-- Start", prefix, false, true)
+func (t *TypeDbAlpine) PkgVerGet(pkg string, branch string, repo string) (ver *string) {
+	prefix := t.MyType + ".PkgVerGet"
+	ezlog.Debug().N(prefix).TxtStart().Out()
 
-	if a.Err != nil {
+	if t.Err != nil {
 		return nil
 	}
-	if !a.init {
-		a.Err = errors.New("not initialized")
+	if !t.Initialized {
+		t.Err = errors.New("not initialized")
 	}
 
-	if a.Db == nil {
-		a.Err = errors.New("database not connected")
+	if t.Db == nil {
+		t.Err = errors.New("database not connected")
 	}
 
 	var row TypeDbAlpineRecord
 
-	if a.Err == nil {
-		result := a.Db.
+	if t.Err == nil {
+		result := t.Db.
 			Unscoped().
 			Where(map[string]interface{}{
 				"Branch": branch,
 				"Repo":   repo,
-				"Arch":   a.Arch,
+				"Arch":   t.Arch,
 				"Pkg":    pkg,
 			}).
 			Find(&row)
-		a.Err = result.Error
+		t.Err = result.Error
 	}
 
-	helper.ErrsQueue(a.Err, prefix)
+	errs.Queue(prefix, t.Err)
 
-	helper.ReportDebug("-- End", prefix, false, true)
+	ezlog.Debug().N(prefix).TxtEnd().Out()
 	return &row.Ver
 }
 
 // Wrapper for Alpine APKINDEX download and database create/update
-func (a *TypeDbAlpine) dbDownload() (err error) {
-	prefix := a.myType + ".dbDownload"
-	helper.ReportDebug("-- Start", prefix, false, true)
+func (t *TypeDbAlpine) dbDownload() (err error) {
+	prefix := t.MyType + ".dbDownload"
+	ezlog.Debug().N(prefix).TxtStart().Out()
 
-	for _, branch := range a.Branch {
-		for _, repo := range a.Repository {
-			for _, arch := range a.Arch {
+	for _, branch := range t.Branch {
+		for _, repo := range t.Repository {
+			for _, arch := range t.Arch {
 				// stable branches don't have "testing"
 				stable := branch == "latest-stable" || strings.ToLower(branch)[0] == 'v'
 				if !(stable && repo == "testing") {
 					// Download APKINDEX.tar.gz
-					err = a.idxDownload(branch, repo, arch)
+					err = t.idxDownload(branch, repo, arch)
 					// Update database
 					if err == nil {
-						err = a.idx2db(branch, repo, arch)
+						err = t.idx2db(branch, repo, arch)
 					}
-					helper.ErrsQueue(err, prefix)
+					errs.Queue(prefix, err)
 				}
 			}
 		}
 	}
 
-	helper.ReportDebug("-- End", prefix, false, true)
+	ezlog.Debug().N(prefix).TxtEnd().Out()
 	return err
 }
 
-func (a *TypeDbAlpine) idxDownload(branch string, repo string, arch string) (err error) {
-	prefix := a.myType + ".idxDownload"
-	helper.ReportDebug("-- Start", prefix, false, true)
+func (t *TypeDbAlpine) idxDownload(branch string, repo string, arch string) (err error) {
+	prefix := t.MyType + ".idxDownload"
+	ezlog.Debug().N(prefix).TxtStart().Out()
 
 	// Prepare download URL
-	urlApkIndex, err := url.JoinPath(a.UrlBase, branch, repo, arch, a.FileIndex+extTgz)
+	urlApkIndex, err := url.JoinPath(t.UrlBase, branch, repo, arch, t.FileIndex+extTgz)
 
 	// Create directory
-	dirArch := a.idxDir(branch, repo, arch)
+	dirArch := t.idxDir(branch, repo, arch)
 	if err == nil {
 		err = os.MkdirAll(dirArch, os.ModePerm)
-		helper.ErrsQueue(err, prefix)
+		errs.Queue(prefix, err)
 	}
 
 	// Download APKINDEX.tar.gz
-	filepathApkindex := path.Join(dirArch, a.FileIndex)
+	filepathApkindex := path.Join(dirArch, t.FileIndex)
 	filepathApkindexTgz := filepathApkindex + extTgz
 	if err == nil {
 		err = download(urlApkIndex, filepathApkindexTgz)
@@ -351,19 +354,19 @@ func (a *TypeDbAlpine) idxDownload(branch string, repo string, arch string) (err
 		err = untar(dirArch, filepathApkindexTgz)
 	}
 
-	helper.ReportDebug("-- End", prefix, false, true)
+	ezlog.Debug().N(prefix).TxtEnd().Out()
 	return err
 }
 
-func (a *TypeDbAlpine) idx2db(branch string, repo string, arch string) (err error) {
-	prefix := a.myType + ".idx2db"
-	helper.ReportDebug("-- Start", prefix, false, true)
+func (t *TypeDbAlpine) idx2db(branch string, repo string, arch string) (err error) {
+	prefix := t.MyType + ".idx2db"
+	ezlog.Debug().N(prefix).TxtStart().Out()
 
-	dirArch := a.idxDir(branch, repo, arch)
-	filepathApkIndex := path.Join(dirArch, a.FileIndex)
-	helper.ReportDebug(filepathApkIndex, prefix, false, true)
+	dirArch := t.idxDir(branch, repo, arch)
+	filepathApkIndex := path.Join(dirArch, t.FileIndex)
+	ezlog.Debug().N(prefix).M(filepathApkIndex).Out()
 
-	var rows helper.MyArray[TypeDbAlpineRecord]
+	var rows array.Array[TypeDbAlpineRecord]
 
 	// Read APKINDEX file
 	byteRead, err := os.ReadFile(filepathApkIndex)
@@ -389,25 +392,25 @@ func (a *TypeDbAlpine) idx2db(branch string, repo string, arch string) (err erro
 			}
 		}
 		// Batch insert into DB
-		result := a.Db.CreateInBatches(rows, 1000)
+		result := t.Db.CreateInBatches(rows, 1000)
 		err = result.Error
 	}
 
-	helper.ErrsQueue(err, prefix)
-	helper.ReportDebug("-- End", prefix, false, true)
+	errs.Queue(prefix, err)
+	ezlog.Debug().N(prefix).TxtEnd().Out()
 	return err
 }
 
 // Calculate(join) APKINDEX directory path base on `repo`, `branch`, `arch` and
-func (a *TypeDbAlpine) idxDir(branch string, repo string, arch string) string {
-	return path.Join(a.DirDb, branch, repo, arch)
+func (t *TypeDbAlpine) idxDir(branch string, repo string, arch string) string {
+	return path.Join(t.DirDb, branch, repo, arch)
 }
 
 // URL download to file
 func download(url string, filepath string) (err error) {
 	prefix := "download"
-	helper.ReportDebug("-- Start", prefix, false, true)
-	helper.ReportDebug("\t"+url+"->\n\t\t"+filepath, prefix, false, false)
+	ezlog.Debug().N(prefix).TxtStart().Out()
+	ezlog.Debug().Nn(prefix).T().Mn(url).T().T().M(filepath)
 
 	var res *http.Response
 	out, err := os.Create(filepath)
@@ -422,21 +425,21 @@ func download(url string, filepath string) (err error) {
 		defer res.Body.Close()
 		_, err = io.Copy(out, res.Body)
 	}
-	// helper.ErrsQueue(err, prefix)
+	// errs.Queue(prefix, err)
 
-	helper.ReportDebug("-- End", prefix, false, true)
+	ezlog.Debug().N(prefix).TxtEnd().Out()
 	return err
 }
 
 // Use command line tar to untar
 func untar(dir string, filepath string) error {
 	prefix := "untar"
-	helper.ReportDebug("-- Start", prefix, false, true)
+	ezlog.Debug().N(prefix).TxtStart().Out()
 
 	opts := []string{"xf", filepath, "-C", dir}
-	myCmd := helper.MyCmdRun("tar", &opts, nil)
-	helper.ErrsQueue(myCmd.Err, prefix)
+	myCmd := cmd.Run("tar", &opts, nil)
+	errs.Queue(prefix, myCmd.Err)
 
-	helper.ReportDebug("-- End", prefix, false, true)
+	ezlog.Debug().N(prefix).TxtEnd().Out()
 	return myCmd.Err
 }

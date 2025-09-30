@@ -1,9 +1,10 @@
 module github.com/J-Siu/go-auto-docker
 
-go 1.24.5
+go 1.25.1
 
 require (
-	github.com/J-Siu/go-helper v1.1.10
+	github.com/J-Siu/go-basestruct v1.1.0
+	github.com/J-Siu/go-helper/v2 v2.3.4
 	github.com/go-git/go-git/v6 v6.0.0-20250728093604-6aaf1933ecab
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
@@ -15,6 +16,7 @@ require (
 	dario.cat/mergo v1.0.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect
+	github.com/charlievieth/strcase v0.0.5 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
@@ -42,7 +44,7 @@ require (
 	golang.org/x/crypto v0.40.0 // indirect
 	golang.org/x/exp v0.0.0-20250531010427-b6e5de432a8b // indirect
 	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

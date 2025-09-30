@@ -25,7 +25,7 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"github.com/J-Siu/go-auto-docker/lib"
+	"github.com/J-Siu/go-auto-docker/global"
 	"github.com/spf13/cobra"
 )
 
@@ -35,7 +35,9 @@ var dbUpdateCmd = &cobra.Command{
 	Aliases: []string{"u"},
 	Short:   "Update database",
 	Run: func(cmd *cobra.Command, args []string) {
-		lib.DbAlpine.Init().DbUpdate()
+		global.DbAlpine.
+			New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch).
+			DbUpdate()
 	},
 }
 
