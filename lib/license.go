@@ -50,7 +50,7 @@ func (t *TypeLicense) New(dir, fileLicense *string) *TypeLicense {
 	t.Base = new(basestruct.Base)
 	t.Initialized = true
 	t.MyType = "TypeLicense"
-	prefix := t.MyType + ".Init"
+	prefix := t.MyType + ".New"
 
 	t.Dir = *dir
 	t.FilePath = path.Join(t.Dir, *fileLicense)
@@ -64,11 +64,7 @@ func (t *TypeLicense) New(dir, fileLicense *string) *TypeLicense {
 
 func (t *TypeLicense) Dump() *TypeLicense {
 	prefix := t.MyType + ".Dump"
-	if t.Err != nil {
-		return t
-	}
-	if !t.Initialized {
-		t.Err = errors.New("not initialized")
+	if !t.CheckErrInit(prefix) {
 		errs.Queue(prefix, t.Err)
 	}
 	if t.Err == nil {
@@ -79,11 +75,7 @@ func (t *TypeLicense) Dump() *TypeLicense {
 
 func (t *TypeLicense) Update() *TypeLicense {
 	prefix := t.MyType + ".Update"
-	if t.Err != nil {
-		return t
-	}
-	if !t.Initialized {
-		t.Err = errors.New("not initialized")
+	if !t.CheckErrInit(prefix) {
 		errs.Queue(prefix, t.Err)
 	}
 	if t.Err == nil {

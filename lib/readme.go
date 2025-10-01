@@ -72,7 +72,7 @@ func (t *TypeReadme) New(dir, pkg, verCurr, verNew, fileReadme, tagReadmeLogStar
 	t.VerCurr = *verCurr
 	t.VerNew = *verNew
 
-	prefix := t.MyType + ".Init"
+	prefix := t.MyType + ".New"
 	ezlog.Debug().Nn(prefix).M(t).Out()
 	if !file.IsRegularFile(t.FilePath) {
 		t.Err = errors.New("TypeReadme.Init: " + t.FilePath + " not found")
@@ -83,11 +83,7 @@ func (t *TypeReadme) New(dir, pkg, verCurr, verNew, fileReadme, tagReadmeLogStar
 
 func (t *TypeReadme) Dump() *TypeReadme {
 	prefix := t.MyType + ".Dump"
-	if t.Err != nil {
-		return t
-	}
-	if !t.Initialized {
-		t.Err = errors.New("not initialized")
+	if !t.CheckErrInit(prefix) {
 		errs.Queue(prefix, t.Err)
 	}
 	if t.Err == nil {
@@ -98,11 +94,7 @@ func (t *TypeReadme) Dump() *TypeReadme {
 
 func (t *TypeReadme) Update() *TypeReadme {
 	prefix := t.MyType + ".Update"
-	if t.Err != nil {
-		return t
-	}
-	if !t.Initialized {
-		t.Err = errors.New("not initialized")
+	if !t.CheckErrInit(prefix) {
 		errs.Queue(prefix, t.Err)
 	}
 	if t.Err == nil {

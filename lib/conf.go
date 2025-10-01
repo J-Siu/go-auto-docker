@@ -65,7 +65,7 @@ func (t *TypeConf) New() *TypeConf {
 	t.Base = new(basestruct.Base)
 	t.Initialized = true
 	t.MyType = "TypeConf"
-	prefix := t.MyType + ".Init"
+	prefix := t.MyType + ".New"
 
 	t.setDefault()
 	ezlog.Debug().N(prefix).Nn("Default").M(t).Out()
