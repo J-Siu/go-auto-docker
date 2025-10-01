@@ -23,7 +23,7 @@ THE SOFTWARE.
 package lib
 
 import (
-	"github.com/J-Siu/go-basestruct"
+	"github.com/J-Siu/go-helper/v2/basestruct"
 	"github.com/J-Siu/go-helper/v2/errs"
 	"github.com/J-Siu/go-helper/v2/ezlog"
 	"github.com/J-Siu/go-helper/v2/file"

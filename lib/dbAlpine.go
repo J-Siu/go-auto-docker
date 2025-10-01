@@ -33,8 +33,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/J-Siu/go-basestruct"
 	"github.com/J-Siu/go-helper/v2/array"
+	"github.com/J-Siu/go-helper/v2/basestruct"
 	"github.com/J-Siu/go-helper/v2/cmd"
 	"github.com/J-Siu/go-helper/v2/errs"
 	"github.com/J-Siu/go-helper/v2/ezlog"
