@@ -39,19 +39,22 @@ import (
 	"github.com/J-Siu/go-helper/v2/strany"
 )
 
+type TypeReadmeProperty struct {
+	Dir               *string `json:"Dir"`
+	FileReadme        *string `json:"FileReadme"` // README filename
+	Pkg               *string `json:"Pkg"`
+	TagReadmeLogEnd   *string `json:"TagReadmeLogEnd"`
+	TagReadmeLogStart *string `json:"TagReadmeLogStart"`
+	VerCurr           *string `json:"VerCurr"`
+	VerNew            *string `json:"VerNew"`
+}
+
 type TypeReadme struct {
 	*basestruct.Base
+	*TypeReadmeProperty
 
-	Content  []string `json:"content,omitempty"`
-	Dir      string   `json:"dir,omitempty"`
-	FilePath string   `json:"file_path,omitempty"`
-
-	TagReadmeLogStart string `json:"tag_readme_log_start,omitempty"`
-	TagReadmeLogEnd   string `json:"tag_readme_log_end,omitempty"`
-
-	Pkg     string `json:"pkg,omitempty"`
-	VerCurr string `json:"ver_curr,omitempty"`
-	VerNew  string `json:"ver_new,omitempty"`
+	Content  *[]string `json:"Content"`
+	FilePath string    `json:"FilePath"` //README path
 
 	changeLogStart bool
 	changeLogEnd   bool
@@ -59,18 +62,12 @@ type TypeReadme struct {
 	newLogContent  string
 }
 
-func (t *TypeReadme) New(dir, pkg, verCurr, verNew, fileReadme, tagReadmeLogStart, tagReadmeLogEnd *string) *TypeReadme {
+func (t *TypeReadme) New(property *TypeReadmeProperty) *TypeReadme {
 	t.Base = new(basestruct.Base)
-	t.Initialized = true
+	t.TypeReadmeProperty = property
 	t.MyType = "TypeReadme"
-	t.Dir = *dir
-	t.FilePath = path.Join(t.Dir, *fileReadme)
-	t.TagReadmeLogStart = *tagReadmeLogStart
-	t.TagReadmeLogEnd = *tagReadmeLogEnd
 
-	t.Pkg = *pkg
-	t.VerCurr = *verCurr
-	t.VerNew = *verNew
+	t.FilePath = path.Join(*t.Dir, *t.FileReadme)
 
 	prefix := t.MyType + ".New"
 	ezlog.Debug().Nn(prefix).M(t).Out()
@@ -78,6 +75,7 @@ func (t *TypeReadme) New(dir, pkg, verCurr, verNew, fileReadme, tagReadmeLogStar
 		t.Err = errors.New("TypeReadme.Init: " + t.FilePath + " not found")
 		errs.Queue(prefix, t.Err)
 	}
+	t.Initialized = true
 	return t
 }
 
@@ -98,20 +96,20 @@ func (t *TypeReadme) Update() *TypeReadme {
 		errs.Queue(prefix, t.Err)
 	}
 	if t.Err == nil {
-		if t.VerNew > t.VerCurr {
+		if *t.VerNew > *t.VerCurr {
 			ezlog.Debug().N(prefix).N(t.Pkg).M(t.VerCurr).M("->").M(t.VerNew).Out()
 			t.changeLogStart = false
 			t.changeLogEnd = false
-			t.newLogHeader = "- " + t.VerNew
-			t.newLogContent = "  - Auto update to " + t.VerNew
+			t.newLogHeader = "- " + *t.VerNew
+			t.newLogContent = "  - Auto update to " + *t.VerNew
 			// for lineNum := range r.Content {
-			for lineNum := range t.Content {
+			for lineNum := range *t.Content {
 				if t.Err == nil {
-					ezlog.Debug().N(prefix).M(&t.Content[lineNum]).Out()
+					ezlog.Debug().N(prefix).M((*t.Content)[lineNum]).Out()
 					t.
-						updateLog(&t.Content[lineNum]).
-						updateLicenseYear(&t.Content[lineNum])
-					ezlog.Debug().N(prefix).M(&t.Content[lineNum]).Out()
+						updateLog(&(*t.Content)[lineNum]).
+						updateLicenseYear(&(*t.Content)[lineNum])
+					ezlog.Debug().N(prefix).M(&(*t.Content)[lineNum]).Out()
 				}
 			}
 		}
@@ -142,11 +140,8 @@ func (t *TypeReadme) Read() *TypeReadme {
 // Write `Content` into README.md
 func (t *TypeReadme) Write() *TypeReadme {
 	prefix := t.MyType + ".Write"
-	if t.Err != nil {
-		return t
-	}
-	if !t.Initialized {
-		t.Err = errors.New("not initialized")
+	if !t.CheckErrInit(prefix) {
+		errs.Queue(prefix, t.Err)
 	}
 	if t.Err == nil {
 		fileStats, err := os.Stat(t.FilePath)
@@ -163,7 +158,7 @@ func (t *TypeReadme) Write() *TypeReadme {
 
 func (t *TypeReadme) updateLog(line *string) *TypeReadme {
 	prefix := t.MyType + ".updateLog"
-	if strings.EqualFold(*line, t.TagReadmeLogStart) {
+	if strings.EqualFold(*line, *t.TagReadmeLogStart) {
 		t.changeLogStart = true
 		ezlog.Debug().N(prefix).TxtStart().Out()
 	}
@@ -171,15 +166,16 @@ func (t *TypeReadme) updateLog(line *string) *TypeReadme {
 		ezlog.Debug().N(prefix).M("Change").TxtStart().M(line).Out()
 		if strings.Contains(*line, t.newLogHeader) {
 			// Something wrong if new log header already exist
-			t.Err = errors.New("change log already contains " + t.VerNew)
+			t.Err = errors.New("change log already contains " + *t.VerNew)
 			errs.Queue(prefix, t.Err)
 		}
-		if t.Err == nil && strings.Contains(*line, t.TagReadmeLogEnd) {
+		if t.Err == nil && strings.Contains(*line, *t.TagReadmeLogEnd) {
+			// Add new content before the ending tag
 			*line = t.newLogHeader + "\n" + t.newLogContent + "\n" + *line
 			ezlog.Debug().N(prefix).M(line).Out()
 		}
 	}
-	if strings.Contains(*line, t.TagReadmeLogEnd) {
+	if strings.Contains(*line, *t.TagReadmeLogEnd) {
 		t.changeLogEnd = true
 		ezlog.Debug().N(prefix).M("Change").TxtEnd().Out()
 	}

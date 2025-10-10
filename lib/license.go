@@ -41,7 +41,7 @@ import (
 type TypeLicense struct {
 	*basestruct.Base
 
-	Content  []string
+	Content  *[]string
 	Dir      string
 	FilePath string
 }
@@ -79,11 +79,11 @@ func (t *TypeLicense) Update() *TypeLicense {
 		errs.Queue(prefix, t.Err)
 	}
 	if t.Err == nil {
-		for lineNum := range t.Content {
+		for lineNum := range *t.Content {
 			if t.Err == nil {
-				ezlog.Debug().N(prefix).M(&t.Content[lineNum]).Out()
-				t.updateLicenseYear(&t.Content[lineNum])
-				ezlog.Debug().N(prefix).M(&t.Content[lineNum]).Out()
+				ezlog.Debug().N(prefix).M((*t.Content)[lineNum]).Out()
+				t.updateLicenseYear(&(*t.Content)[lineNum])
+				ezlog.Debug().N(prefix).M((*t.Content)[lineNum]).Out()
 			}
 		}
 	}

@@ -41,9 +41,9 @@ import (
 type TypeDocker struct {
 	*basestruct.Base
 
-	Content  []string `json:"content,omitempty"`
-	Dir      string   `json:"dir,omitempty"`
-	FilePath string   `json:"file_path,omitempty"`
+	Content  *[]string `json:"content,omitempty"`
+	Dir      string    `json:"dir,omitempty"`
+	FilePath string    `json:"file_path,omitempty"`
 
 	Distro string   `json:"distro,omitempty"`
 	Branch string   `json:"branch,omitempty"`
@@ -80,19 +80,19 @@ func (t *TypeDocker) New(dir *string, debug, verbose bool) *TypeDocker {
 	ezlog.Debug().Nn(prefix).M(t).Out()
 	if t.Err == nil {
 		if t.Branch == "" {
-			t.Err = errors.New("FROM distro:branch not found in docker file")
+			t.Err = errors.New(*dir + " FROM distro:branch not found in docker file")
 			errs.Queue(prefix, t.Err)
 		}
 		if t.VerCurr == "" {
-			t.Err = errors.New("LABEL version not found in docker file")
+			t.Err = errors.New(*dir + " LABEL version not found in docker file")
 			errs.Queue(prefix, t.Err)
 		}
 		if t.Pkg == "" {
-			t.Err = errors.New("LABEL name not found in docker file")
+			t.Err = errors.New(*dir + " LABEL name not found in docker file")
 			errs.Queue(prefix, t.Err)
 		}
 		if t.PkgRun == "" {
-			t.Err = errors.New("RUN <package=version> not found in docker file")
+			t.Err = errors.New(*dir + "(" + t.Pkg + ") <package=version> not found in docker file")
 			errs.Queue(prefix, t.Err)
 		}
 	} else {
@@ -144,9 +144,7 @@ func (t *TypeDocker) Dump() *TypeDocker {
 // Update `Content`
 func (t *TypeDocker) Update(dbAlpine *TypeDbAlpine) *TypeDocker {
 	prefix := t.MyType + ".Update"
-	if !t.CheckErrInit(prefix) {
-		errs.Queue(prefix, t.Err)
-	}
+	t.CheckErrInit(prefix)
 	if t.Err == nil {
 		// Check for new version
 		for _, b := range t.Repo {
@@ -161,10 +159,10 @@ func (t *TypeDocker) Update(dbAlpine *TypeDbAlpine) *TypeDocker {
 		if t.VerNew > t.VerCurr {
 			ezlog.Debug().N(prefix).N(t.Pkg).M(t.VerCurr).M("->").M(t.VerNew).Out()
 			pkgRunNew := t.Pkg + "=" + t.VerNew
-			for index := range t.Content {
-				t.Content[index] = strings.ReplaceAll(t.Content[index], t.VerCurr, t.VerNew)
+			for index := range *t.Content {
+				(*t.Content)[index] = strings.ReplaceAll((*t.Content)[index], t.VerCurr, t.VerNew)
 				// above will miss package version in RUN line if LABEL has local patch level(-pXX)
-				t.Content[index] = strings.ReplaceAll(t.Content[index], t.PkgRun, pkgRunNew)
+				(*t.Content)[index] = strings.ReplaceAll((*t.Content)[index], t.PkgRun, pkgRunNew)
 			}
 		}
 	}
@@ -220,7 +218,7 @@ func (t *TypeDocker) extract() *TypeDocker {
 	if t.Err == nil {
 		testing := "testing"
 		branchTesting := t.Branch + "/" + testing
-		for _, line := range t.Content {
+		for _, line := range *t.Content {
 			ezlog.Debug().N(prefix).M(line).Out()
 			words := strings.Split(line, " ") // split line by space
 			switch strings.ToLower(words[0]) {
@@ -246,19 +244,18 @@ func (t *TypeDocker) extract() *TypeDocker {
 					ezlog.Debug().N(prefix).N(words[0]).N(label[0]).M(label[1]).Out()
 					t.Pkg = strings.ReplaceAll(label[1], "\"", "")
 				}
-			case "run":
+			default:
 				// search for <Pkg=*>
 				for _, w := range words {
 					subStrArr := []string{t.Pkg + "="}
-					if str.ContainsAnySubStringsBool(&w, &subStrArr) {
+					if str.ContainsAnySubStringsBool(&w, &subStrArr, false) {
 						ezlog.Debug().N(prefix).N(words[0]).M(w).Out()
 						t.PkgRun = w
 					}
 				}
-			default:
 				// detect branch testing
 				if strings.Contains(line, branchTesting) {
-					if !str.ArrayContains(&t.Repo, &testing) {
+					if !str.ArrayContains(&t.Repo, &testing, false) {
 						t.Repo = append(t.Repo, testing)
 					}
 				}

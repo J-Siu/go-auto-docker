@@ -3,7 +3,7 @@ module github.com/J-Siu/go-auto-docker
 go 1.25.1
 
 require (
-	github.com/J-Siu/go-helper/v2 v2.4.1
+	github.com/J-Siu/go-helper/v2 v2.5.2
 	github.com/go-git/go-git/v6 v6.0.0-20250728093604-6aaf1933ecab
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0

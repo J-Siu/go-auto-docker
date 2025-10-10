@@ -99,8 +99,17 @@ var updateCmd = &cobra.Command{
 
 					// README.md file. Depends on docker.VerCurr. Must be done after processing docker.
 					if err == nil {
+						property := lib.TypeReadmeProperty{
+							Dir:               &repo.DirCache,
+							FileReadme:        &global.Conf.FileReadme,
+							Pkg:               &docker.Pkg,
+							TagReadmeLogEnd:   &global.Conf.TagReadmeLogEnd,
+							TagReadmeLogStart: &global.Conf.TagReadmeLogStart,
+							VerCurr:           &docker.VerCurr,
+							VerNew:            &docker.VerNew,
+						}
 						readme.
-							New(&repo.DirCache, &docker.Pkg, &docker.VerCurr, &docker.VerNew, &global.Conf.FileReadme, &global.Conf.TagReadmeLogStart, &global.Conf.TagReadmeLogEnd).
+							New(&property).
 							Read().
 							Update().
 							Write()
