@@ -13,6 +13,65 @@
   - Assume `main` and `community` repository
   - Detect `testing` branch via `edge/testing`
 
+### Usage
+
+```sh
+Automate update for README.md change log, apply tag according to package version. Also handle test build, git commit.
+
+Usage:
+  go-auto-docker [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  config      Print configurations
+  db          DB commands
+  help        Help about any command
+  update      Update Alpine package version
+
+Flags:
+      --config string   config file (default "~/.config/go-auto-docker.json")
+  -d, --debug           enable debug
+  -h, --help            help for go-auto-docker
+  -v, --verbose         enable debug
+      --version         version for go-auto-docker
+
+Use "go-auto-docker [command] --help" for more information about a command.
+```
+
+Update:
+
+```sh
+Update Alpine package version
+
+Usage:
+  go-auto-docker update [flags]
+
+Aliases:
+  update, u
+
+Flags:
+  -b, --buildTest   so not perform docker build
+  -c, --commit      apply git commit. Only work with -save
+  -h, --help        help for update
+  -s, --save        write back to project folder (cancel on error)
+  -t, --tag         apply git tag. (only work with --commit)
+  -u, --updateDb    update Alpine package database
+
+Global Flags:
+      --config string   config file (default "~/.config/go-auto-docker.json")
+  -d, --debug           enable debug
+  -v, --verbose         enable debug
+```
+
+```sh
+go-auto-docker update \
+--buildTest \ # Test docker build
+--commit \    # Git commit
+--save \      # Save back to original folder
+--tag \       # Git tag with new version
+docker_*      # Handle multiple repository directories
+```
+
 ### Change Log
 
 - v0.5.0
