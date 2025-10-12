@@ -159,10 +159,11 @@ var updateCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(updateCmd)
-	updateCmd.Flags().BoolVarP(&global.FlagUpdate.Commit, "commit", "c", false, "apply git commit. Only work with -save")
-	updateCmd.Flags().BoolVarP(&global.FlagUpdate.BuildTest, "buildTest", "b", false, "so not perform docker build")
-	updateCmd.Flags().BoolVarP(&global.FlagUpdate.Save, "save", "s", false, "write back to project folder (cancel on error)")
-	updateCmd.Flags().BoolVarP(&global.FlagUpdate.Tag, "tag", "t", false, "apply git tag. (only work with --commit)")
-	updateCmd.Flags().BoolVarP(&global.FlagUpdate.UpdateDb, "updateDb", "u", false, "update Alpine package database")
+	cmd := updateCmd
+	rootCmd.AddCommand(cmd)
+	cmd.Flags().BoolVarP(&global.FlagUpdate.Commit, "commit", "c", false, "apply git commit. Only work with -save")
+	cmd.Flags().BoolVarP(&global.FlagUpdate.BuildTest, "buildTest", "b", false, "so not perform docker build")
+	cmd.Flags().BoolVarP(&global.FlagUpdate.Save, "save", "s", false, "write back to project folder (cancel on error)")
+	cmd.Flags().BoolVarP(&global.FlagUpdate.Tag, "tag", "t", false, "apply git tag. (only work with --commit)")
+	cmd.Flags().BoolVarP(&global.FlagUpdate.UpdateDb, "updateDb", "u", false, "update Alpine package database")
 }

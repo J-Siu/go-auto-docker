@@ -24,13 +24,6 @@ THE SOFTWARE.
 
 package global
 
-import "github.com/J-Siu/go-auto-docker/lib"
-
 var (
-	Conf         lib.TypeConf
-	Flag         lib.TypeFlag
-	FlagUpdate   lib.TypeFlagUpdate
-	FlagDbSearch lib.TypeFlagDbSearch
-
-	DbAlpine lib.TypeDbAlpine
+	Version = "v0.6.0"
 )

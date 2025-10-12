@@ -1,8 +1,11 @@
 # go-auto-docker
 
-### Table Of Content
-<!-- TOC -->
-<!-- /TOC -->
+- [Limitation](#limitation)
+- [Install](#install)
+- [Usage](#usage)
+- [Change Log](#change-log)
+- [License](#license)
+
 ### Limitation
 
 - Assume single Alpine package docker container
@@ -12,6 +15,18 @@
   - `RUN` install line should specify version
   - Assume `main` and `community` repository
   - Detect `testing` branch via `edge/testing`
+
+### Install
+
+Go install
+
+```sh
+go install github.com/J-Siu/go-auto-docker@latest
+```
+
+Download
+
+- https://github.com/J-Siu/go-auto-docker/releases
 
 ### Usage
 
@@ -82,6 +97,8 @@ docker_*      # Handle multiple repository directories
   - `TypeReadme` use property
   - fix `TypeDocker` "package=version" line extraction
   - update go-helper/v2
+- v0.6.0
+  - Add Github actions
 
 ### License
 
