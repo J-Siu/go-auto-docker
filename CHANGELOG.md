@@ -1,0 +1,10 @@
+- v0.5.0
+  - Feature completed
+- v0.5.1
+  - update to go-helper/v2
+- v0.5.2
+  - `TypeReadme` use property
+  - fix `TypeDocker` "package=version" line extraction
+  - update go-helper/v2
+- v0.6.0
+  - Add Github actions
