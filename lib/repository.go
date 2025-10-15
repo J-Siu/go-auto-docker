@@ -119,13 +119,14 @@ func (t *TypeRepository) Commit(msg string, tag bool, cache bool) *TypeRepositor
 	}
 
 	commitOptions := git.CommitOptions{}
-	// var commitObj *object.Commit
-	var commit plumbing.Hash
-	var gitConf *config.Config
-	var gitDir string
-	var gitRepo *git.Repository
-	var gitWorktree *git.Worktree
-	var gitHead *plumbing.Reference
+	var (
+		commit      plumbing.Hash
+		gitConf     *config.Config
+		gitDir      string
+		gitRepo     *git.Repository
+		gitWorktree *git.Worktree
+		gitHead     *plumbing.Reference
+	)
 	if cache {
 		gitDir = t.DirCache
 	} else {
@@ -139,7 +140,6 @@ func (t *TypeRepository) Commit(msg string, tag bool, cache bool) *TypeRepositor
 	// Repository load config
 	if t.Err == nil {
 		gitConf, t.Err = gitRepo.Config()
-		gitConf.User.Name = "J" // TODO: why J?
 		ezlog.Debug().Nn(prefix).M(gitConf).Out()
 	}
 	// Repository worktree
@@ -164,7 +164,6 @@ func (t *TypeRepository) Commit(msg string, tag bool, cache bool) *TypeRepositor
 	}
 	// Repository commit
 	if t.Err == nil {
-		// commitObj, p.Err = p.gitRepo.CommitObject(commit)
 		_, t.Err = gitRepo.CommitObject(commit)
 		ezlog.Debug().N(prefix).M("repo committed").Out()
 	}
