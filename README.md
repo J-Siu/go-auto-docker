@@ -1,20 +1,13 @@
 # go-auto-docker
 
-- [Limitation](#limitation)
+Automate update dockerfile, change log, build test, commit, git tag according to package version.
+
 - [Install](#install)
 - [Usage](#usage)
+- [Limitation](#limitation)
 - [License](#license)
 
-### Limitation
-
-- Assume single Alpine package docker container
-- Does not work in MacOS
-- Dockerfile
-  - "LABEL version:" equal to package version
-  - `RUN` install line should specify version
-  - Assume `main` and `community` repository
-  - Detect `testing` branch via `edge/testing`
-
+<!--more-->
 ### Install
 
 Go install
@@ -85,6 +78,16 @@ go-auto-docker update \
 --tag \       # Git tag with new version
 docker_*      # Handle multiple repository directories
 ```
+
+### Limitation
+
+- Assume single Alpine package docker container
+- Does not work in MacOS
+- Dockerfile
+  - "LABEL version:" equal to package version
+  - `RUN` install line should specify version
+  - Assume `main` and `community` repository
+  - Detect `testing` branch via `edge/testing`
 
 ### License
 
