@@ -62,9 +62,8 @@ var updateCmd = &cobra.Command{
 
 		for _, workPath := range args {
 			docker := lib.TypeDocker{}
-			license := lib.TypeLicense{}
 			repo := lib.TypeRepository{}
-			readme := lib.TypeReadme{}
+			changelog := lib.TypeChangeLog{}
 
 			// Repository copy to cache(tmp)
 			repo.
@@ -99,37 +98,22 @@ var updateCmd = &cobra.Command{
 
 					// README.md file. Depends on docker.VerCurr. Must be done after processing docker.
 					if err == nil {
-						property := lib.TypeReadmeProperty{
-							Dir:               &repo.DirCache,
-							FileReadme:        &global.Conf.FileReadme,
-							Pkg:               &docker.Pkg,
-							TagReadmeLogEnd:   &global.Conf.TagReadmeLogEnd,
-							TagReadmeLogStart: &global.Conf.TagReadmeLogStart,
-							VerCurr:           &docker.VerCurr,
-							VerNew:            &docker.VerNew,
+						property := lib.TypeChangeLogProperty{
+							Dir:           &repo.DirCache,
+							FileChangeLog: &global.Conf.FileChangeLog,
+							Pkg:           &docker.Pkg,
+							VerCurr:       &docker.VerCurr,
+							VerNew:        &docker.VerNew,
 						}
-						readme.
+						changelog.
 							New(&property).
 							Read().
 							Update().
 							Write()
 						if global.Flag.Debug {
-							readme.Dump()
+							changelog.Dump()
 						}
-						err = readme.Err
-					}
-
-					// LICENSE file
-					if err == nil {
-						license.
-							New(&repo.DirCache, &global.Conf.FileLicense).
-							Read().
-							Update().
-							Write()
-						if global.Flag.Debug {
-							license.Dump()
-						}
-						err = license.Err
+						err = changelog.Err
 					}
 
 					// Repository commit and tag

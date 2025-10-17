@@ -31,12 +31,12 @@ import (
 )
 
 var ConfDefault = TypeConf{
-	DirCache:    "~/.cache/go-auto-docker",
-	DirDB:       "db",
-	DirRepo:     "repo",
-	FileConf:    "~/.config/go-auto-docker.json",
-	FileLicense: "LICENSE",
-	FileReadme:  "README.md",
+	DirCache:      "~/.cache/go-auto-docker",
+	DirDB:         "db",
+	DirRepo:       "repo",
+	FileConf:      "~/.config/go-auto-docker.json",
+	FileLicense:   "LICENSE",
+	FileChangeLog: "CHANGELOG.md",
 
 	AlpineBranch: []string{"latest-stable", "edge"},
 
@@ -47,12 +47,12 @@ var ConfDefault = TypeConf{
 type TypeConf struct {
 	*basestruct.Base
 
-	DirCache    string `json:"DirCache"`    // Directory name, not full path, of cache. Default: ~/.cache/go-auto-docker
-	DirDB       string `json:"DirDB"`       // Directory name, not full path, of database. Default: db
-	DirRepo     string `json:"DirRepo"`     // Directory name, not full path, of repository copy. Default: repo
-	FileConf    string `json:"FileConf"`    // Full path of config file. Default: ~/.config/go-auto-docker.json
-	FileLicense string `json:"FileLicense"` // Filename, not full path, of readme file. Default: LICENSE
-	FileReadme  string `json:"FileReadme"`  // Filename, not full path, of readme file. Default: README.md
+	DirCache      string `json:"DirCache"`    // Directory name, not full path, of cache. Default: ~/.cache/go-auto-docker
+	DirDB         string `json:"DirDB"`       // Directory name, not full path, of database. Default: db
+	DirRepo       string `json:"DirRepo"`     // Directory name, not full path, of repository copy. Default: repo
+	FileConf      string `json:"FileConf"`    // Full path of config file. Default: ~/.config/go-auto-docker.json
+	FileLicense   string `json:"FileLicense"` // Filename, not full path, of readme file. Default: LICENSE
+	FileChangeLog string `json:"FileReadme"`  // Filename, not full path, of readme file. Default: README.md
 
 	AlpineBranch []string `json:"AlpineBranch"`
 
@@ -105,7 +105,7 @@ func (t *TypeConf) setDefault() *TypeConf {
 	t.DirDB = ConfDefault.DirDB
 	t.DirRepo = ConfDefault.DirRepo
 	t.FileLicense = ConfDefault.FileLicense
-	t.FileReadme = ConfDefault.FileReadme
+	t.FileChangeLog = ConfDefault.FileChangeLog
 	t.AlpineBranch = ConfDefault.AlpineBranch
 	t.TagReadmeLogEnd = ConfDefault.TagReadmeLogEnd
 	t.TagReadmeLogStart = ConfDefault.TagReadmeLogStart
