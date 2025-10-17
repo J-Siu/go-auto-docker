@@ -8,3 +8,6 @@
   - update go-helper/v2
 - v0.6.0
   - Add Github actions
+- v0.7.0
+  - no longer update README.md, but CHANGELOG.md
+  - no longer update LICENSE
