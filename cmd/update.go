@@ -110,10 +110,10 @@ var updateCmd = &cobra.Command{
 							Read().
 							Update().
 							Write()
-						if global.Flag.Debug {
+						err = changelog.Err
+						if err == nil && global.Flag.Debug {
 							changelog.Dump()
 						}
-						err = changelog.Err
 					}
 
 					// Repository commit and tag
