@@ -82,21 +82,22 @@ func (t *TypeChangeLog) Dump() *TypeChangeLog {
 func (t *TypeChangeLog) Update() *TypeChangeLog {
 	prefix := t.MyType + ".Update"
 	var contentNew []string
-	if t.CheckErrInit(prefix) {
-		if *t.VerNew > *t.VerCurr {
-			ezlog.Debug().N(prefix).N(t.Pkg).M(t.VerCurr).M("->").M(t.VerNew).Out()
-			for _, line := range *t.Content {
-				ezlog.Debug().N(prefix).M(&line).Out()
-				if strings.Contains(line, *t.VerNew) {
-					t.Err = errors.New(prefix + ": " + *t.FileChangeLog + " contains " + *t.VerNew)
-					break
-				} else if line != "" {
-					contentNew = append(contentNew, line)
-				}
+	if !t.CheckErrInit(prefix) {
+		return t
+	}
+	if *t.VerNew > *t.VerCurr {
+		ezlog.Debug().N(prefix).N(t.Pkg).M(t.VerCurr).M("->").M(t.VerNew).Out()
+		for _, line := range *t.Content {
+			ezlog.Debug().N(prefix).M(&line).Out()
+			if strings.Contains(line, *t.VerNew) {
+				t.Err = errors.New(*t.FileChangeLog + " contains " + *t.VerNew)
+				break
+			} else if line != "" {
+				contentNew = append(contentNew, line)
 			}
-		} else {
-			t.Err = errors.New(prefix + ": Version not newer")
 		}
+	} else {
+		t.Err = errors.New(": Version not newer")
 	}
 	if t.Err == nil {
 		contentNew = append(contentNew, "- "+*t.VerNew)
@@ -131,7 +132,7 @@ func (t *TypeChangeLog) Read() *TypeChangeLog {
 func (t *TypeChangeLog) Write() *TypeChangeLog {
 	prefix := t.MyType + ".Write"
 	if !t.CheckErrInit(prefix) {
-		errs.Queue(prefix, t.Err)
+		return t
 	}
 	if t.Err == nil {
 		fileStats, err := os.Stat(t.FilePath)
