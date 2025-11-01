@@ -59,7 +59,7 @@ func (t *TypeChangeLog) New(property *TypeChangeLogProperty) *TypeChangeLog {
 	t.FilePath = path.Join(*t.Dir, *t.FileChangeLog)
 
 	prefix := t.MyType + ".New"
-	ezlog.Debug().Nn(prefix).M(t).Out()
+	ezlog.Debug().N(prefix).Lm(t).Out()
 	if !file.IsRegularFile(t.FilePath) {
 		t.Err = errors.New(t.FilePath + " not found")
 		errs.Queue(prefix, t.Err)
@@ -74,7 +74,7 @@ func (t *TypeChangeLog) Dump() *TypeChangeLog {
 		errs.Queue(prefix, t.Err)
 	}
 	if t.Err == nil {
-		ezlog.Log().Nn(prefix).M(t).Out()
+		ezlog.Log().N(prefix).Lm(t).Out()
 	}
 	return t
 }
@@ -118,7 +118,7 @@ func (t *TypeChangeLog) Read() *TypeChangeLog {
 		t.Err = errors.New("not initialized")
 	}
 	if t.Err == nil {
-		t.Content, t.Err = file.ArrayRead(t.FilePath)
+		t.Content, t.Err = file.ReadStrArray(t.FilePath)
 		if t.Err != nil {
 			t.Err = errors.New(t.FilePath + " not found")
 		} else {
@@ -140,7 +140,7 @@ func (t *TypeChangeLog) Write() *TypeChangeLog {
 			// Should never happen at this stage, but ...
 			t.Err = err
 		} else {
-			file.ArrayWrite(t.FilePath, t.Content, fileStats.Mode())
+			file.WriteStrArray(t.FilePath, t.Content, fileStats.Mode())
 		}
 	}
 	errs.Queue(prefix, t.Err)

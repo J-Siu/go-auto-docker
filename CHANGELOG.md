@@ -11,3 +11,5 @@
 - v0.7.0
   - no longer update README.md, but CHANGELOG.md
   - no longer update LICENSE
+- v0.7.1
+  - update go-helper/v2

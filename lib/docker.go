@@ -77,7 +77,7 @@ func (t *TypeDocker) New(dir *string, debug, verbose bool) *TypeDocker {
 	if t.Err == nil {
 		t.read().extract()
 	}
-	ezlog.Debug().Nn(prefix).M(t).Out()
+	ezlog.Debug().N(prefix).Lm(t).Out()
 	if t.Err == nil {
 		if t.Branch == "" {
 			t.Err = errors.New(*dir + " FROM distro:branch not found in docker file")
@@ -136,7 +136,7 @@ func (t *TypeDocker) Dump() *TypeDocker {
 		errs.Queue(prefix, t.Err)
 	}
 	if t.Err == nil {
-		ezlog.Log().Nn(prefix).M(t).Out()
+		ezlog.Log().N(prefix).Lm(t).Out()
 	}
 	return t
 }
@@ -181,7 +181,7 @@ func (t *TypeDocker) Write() *TypeDocker {
 			// Should never happen at this stage, but ...
 			t.Err = err
 		} else {
-			file.ArrayWrite(t.FilePath, t.Content, fileStats.Mode())
+			file.WriteStrArray(t.FilePath, t.Content, fileStats.Mode())
 		}
 	}
 	errs.Queue(prefix, t.Err)
@@ -195,7 +195,7 @@ func (t *TypeDocker) read() *TypeDocker {
 		errs.Queue(prefix, t.Err)
 	}
 	if t.Err == nil {
-		t.Content, t.Err = file.ArrayRead(t.FilePath)
+		t.Content, t.Err = file.ReadStrArray(t.FilePath)
 		if t.Err != nil {
 			t.Err = errors.New(t.FilePath + " not found")
 			errs.Queue(prefix, t.Err)

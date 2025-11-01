@@ -140,7 +140,7 @@ func (t *TypeRepository) Commit(msg string, tag bool, cache bool) *TypeRepositor
 	// Repository load config
 	if t.Err == nil {
 		gitConf, t.Err = gitRepo.Config()
-		ezlog.Debug().Nn(prefix).M(gitConf).Out()
+		ezlog.Debug().N(prefix).Lm(gitConf).Out()
 	}
 	// Repository worktree
 	if t.Err == nil {

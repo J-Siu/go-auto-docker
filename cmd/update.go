@@ -37,7 +37,7 @@ var updateCmd = &cobra.Command{
 	Short:   "Update Alpine package version",
 	Run: func(cmd *cobra.Command, args []string) {
 		prefix := "update"
-		ezlog.Debug().Nn("FlagUpdate").M(&global.FlagUpdate).Out()
+		ezlog.Debug().N("FlagUpdate").Lm(&global.FlagUpdate).Out()
 
 		var err error
 

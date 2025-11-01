@@ -3,8 +3,8 @@ module github.com/J-Siu/go-auto-docker
 go 1.25.1
 
 require (
-	github.com/J-Siu/go-helper/v2 v2.5.5
-	github.com/go-git/go-git/v6 v6.0.0-20251009132922-75a182125145
+	github.com/J-Siu/go-helper/v2 v2.6.0
+	github.com/go-git/go-git/v6 v6.0.0-20251029213217-0bbfc0875edd
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0
 	gorm.io/driver/sqlite v1.6.0
@@ -21,7 +21,7 @@ require (
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-git/gcfg/v2 v2.0.2 // indirect
-	github.com/go-git/go-billy/v6 v6.0.0-20251008191739-bf4aa134545f // indirect
+	github.com/go-git/go-billy/v6 v6.0.0-20251026101908-623011986e70 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

@@ -92,7 +92,7 @@ func (t *TypeDbAlpine) New(dirCache, dirDb *string, alpineBranch *[]string) *Typ
 
 	t.setDefault(alpineBranch)
 
-	ezlog.Debug().Nn(prefix).M(t).Out()
+	ezlog.Debug().N(prefix).Lm(t).Out()
 
 	ezlog.Debug().N(prefix).TxtEnd().Out()
 	return t
@@ -410,7 +410,7 @@ func (t *TypeDbAlpine) idxDir(branch string, repo string, arch string) string {
 func download(url string, filepath string) (err error) {
 	prefix := "download"
 	ezlog.Debug().N(prefix).TxtStart().Out()
-	ezlog.Debug().Nn(prefix).T().Mn(url).T().T().M(filepath)
+	ezlog.Debug().Nl(prefix).T().Ml(url).T().T().M(filepath)
 
 	var res *http.Response
 	out, err := os.Create(filepath)
