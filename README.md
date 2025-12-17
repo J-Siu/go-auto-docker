@@ -1,6 +1,6 @@
 # go-auto-docker
 
-Automate update dockerfile, change log, build test, commit, git tag according to package version.
+Automate update single Alpine package docker container. Update dockerfile, change log, build test, commit, git tag according to package version.
 
 - [Install](#install)
 - [Usage](#usage)
