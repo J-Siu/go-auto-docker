@@ -15,3 +15,5 @@
   - update go-helper/v2
 - v0.7.2
   - update go-helper/v2
+- v0.7.3
+  - update workflow
