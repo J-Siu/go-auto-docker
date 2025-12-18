@@ -27,6 +27,7 @@ package cmd
 import (
 	"github.com/J-Siu/go-auto-docker/global"
 	"github.com/J-Siu/go-auto-docker/lib"
+	"github.com/J-Siu/go-helper/v2/errs"
 	"github.com/J-Siu/go-helper/v2/ezlog"
 	"github.com/spf13/cobra"
 )
@@ -39,16 +40,15 @@ var updateCmd = &cobra.Command{
 		prefix := "update"
 		ezlog.Debug().N("FlagUpdate").Lm(&global.FlagUpdate).Out()
 
-		var err error
+		var (
+			err error
+		)
 
+		global.DbAlpine.New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch)
 		if global.FlagUpdate.UpdateDb {
-			global.DbAlpine.
-				New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch).
-				DbUpdate()
+			global.DbAlpine.DbUpdate()
 		} else {
-			global.DbAlpine.
-				New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch).
-				DbConnect()
+			global.DbAlpine.DbConnect()
 		}
 		err = global.DbAlpine.Err
 
@@ -75,46 +75,29 @@ var updateCmd = &cobra.Command{
 			if err == nil {
 				docker.
 					New(&repo.DirCache, global.Flag.Debug, global.Flag.Verbose).
-					Update(&global.DbAlpine)
-				if global.Flag.Debug {
-					docker.Dump()
-				}
+					Update(&global.DbAlpine).
+					Write().
+					Dump(global.Flag.Debug).
+					BuildTest(global.FlagUpdate.BuildTest)
 				err = docker.Err
 			}
 
 			if err == nil {
-				if docker.VerNew > docker.VerCurr {
-
-					if err == nil {
-						docker.Write()
-						err = docker.Err
-					}
-
-					// test build
-					if err == nil && global.FlagUpdate.BuildTest {
-						docker.BuildTest()
-						err = docker.Err
-					}
-
+				if docker.Updated() {
 					// README.md file. Depends on docker.VerCurr. Must be done after processing docker.
-					if err == nil {
-						property := lib.TypeChangeLogProperty{
-							Dir:           &repo.DirCache,
-							FileChangeLog: &global.Conf.FileChangeLog,
-							Pkg:           &docker.Pkg,
-							VerCurr:       &docker.VerCurr,
-							VerNew:        &docker.VerNew,
-						}
-						changelog.
-							New(&property).
-							Read().
-							Update().
-							Write()
-						err = changelog.Err
-						if err == nil && global.Flag.Debug {
-							changelog.Dump()
-						}
+					property := lib.TypeChangeLogProperty{
+						Dir:           &repo.DirCache,
+						FileChangeLog: &global.Conf.FileChangeLog,
+						Pkg:           &docker.Pkg,
+						VerCurr:       &docker.VerCurr,
+						VerNew:        &docker.VerNew,
 					}
+					changelog.
+						New(&property).
+						Update().
+						Write().
+						Dump(global.Flag.Debug)
+					err = changelog.Err
 
 					// Repository commit and tag
 					if err == nil && global.FlagUpdate.Commit {
@@ -131,13 +114,16 @@ var updateCmd = &cobra.Command{
 						ezlog.Log().N(prefix).N("YES").N(docker.Pkg).M(docker.VerCurr).M("->").M(docker.VerNew).Out()
 					}
 				} else {
-					verNew := docker.VerNew
-					if verNew == "" {
-						verNew = "N/A"
+					ezlog.Log().N(prefix).N("NO").N(docker.Pkg).M(docker.VerCurr).M("->")
+					if docker.VerNew == "" {
+						ezlog.M("<package not found>")
+					} else {
+						ezlog.M(docker.VerNew)
 					}
-					ezlog.Log().N(prefix).N("NO").N(docker.Pkg).M(docker.VerCurr).M("->").M(docker.VerNew).Out()
+					ezlog.Out()
 				}
 			}
+			errs.Queue("", err)
 		}
 	},
 }
