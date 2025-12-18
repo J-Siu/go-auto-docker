@@ -110,25 +110,25 @@ func (t *TypeDocker) BuildTest() *TypeDocker {
 	if !t.CheckErrInit(prefix) {
 		errs.Queue(prefix, t.Err)
 	}
-	var myCmd *cmd.Cmd
-	imgName := t.Pkg + ":" + "auto_docker"
 	if t.Err == nil {
-		// RUN_CMD "docker build --quiet -t ${_img} ."
-		args := []string{"build", "--quiet", "-t", imgName, "."}
-		myCmd = cmd.Run("docker", &args, &t.Dir)
+		var (
+			imgName = t.Pkg + ":" + "auto_docker"
+			args    = []string{"build", "--quiet", "-t", imgName, "."}
+			myCmd   = cmd.Run("docker", &args, &t.Dir)
+		)
 		t.Err = myCmd.Err
-	}
-	if t.Err == nil {
-		// RUN_CMD "docker image rm ${_img}"
-		args := []string{"image", "rm", imgName}
-		myCmd = cmd.Run("docker", &args, &t.Dir)
-		t.Err = myCmd.Err
-	}
-	if t.Verbose || t.Debug {
 		if t.Err == nil {
-			ezlog.Log().N(prefix).N(imgName).Msg("Success").Out()
-		} else {
-			ezlog.Log().N(prefix).N(imgName).Msg("Failed").Out()
+			// RUN_CMD "docker image rm ${_img}"
+			args := []string{"image", "rm", imgName}
+			myCmd = cmd.Run("docker", &args, &t.Dir)
+			t.Err = myCmd.Err
+		}
+		if t.Verbose || t.Debug {
+			if t.Err == nil {
+				ezlog.Log().N(prefix).N(imgName).Msg("Success").Out()
+			} else {
+				ezlog.Log().N(prefix).N(imgName).Msg("Failed").Out()
+			}
 		}
 	}
 	return t
@@ -190,8 +190,8 @@ func (t *TypeDocker) Write() *TypeDocker {
 		} else {
 			file.WriteStrArray(t.FilePath, t.Content, fileStats.Mode())
 		}
+		errs.Queue(prefix, t.Err)
 	}
-	errs.Queue(prefix, t.Err)
 	return t
 }
 
