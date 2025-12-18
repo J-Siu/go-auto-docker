@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"github.com/J-Siu/go-auto-docker/global"
+	"github.com/J-Siu/go-helper/v2/errs"
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +23,7 @@ var dbSearchCmd = &cobra.Command{
 				global.DbAlpine.PkgSearch(pkg, global.FlagDbSearch.Exact)
 			}
 		}
+		errs.Queue("", global.DbAlpine.Err)
 	},
 }
 

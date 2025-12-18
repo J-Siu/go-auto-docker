@@ -26,6 +26,7 @@ package cmd
 
 import (
 	"github.com/J-Siu/go-auto-docker/global"
+	"github.com/J-Siu/go-helper/v2/errs"
 	"github.com/spf13/cobra"
 )
 
@@ -38,6 +39,7 @@ var dbUpdateCmd = &cobra.Command{
 		global.DbAlpine.
 			New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch).
 			DbUpdate()
+		errs.Queue("", global.DbAlpine.Err)
 	},
 }
 
