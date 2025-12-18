@@ -51,6 +51,7 @@ type TypeChangeLog struct {
 	FilePath string    `json:"FilePath"` //README path
 }
 
+// New will read [FileChangeLog]
 func (t *TypeChangeLog) New(property *TypeChangeLogProperty) *TypeChangeLog {
 	t.Base = new(basestruct.Base)
 	t.TypeChangeLogProperty = property
@@ -61,88 +62,73 @@ func (t *TypeChangeLog) New(property *TypeChangeLogProperty) *TypeChangeLog {
 	prefix := t.MyType + ".New"
 	ezlog.Debug().N(prefix).Lm(t).Out()
 	if !file.IsRegularFile(t.FilePath) {
-		t.Err = errors.New(t.FilePath + " not found")
-		errs.Queue(prefix, t.Err)
+		t.Err = errs.New(prefix, t.FilePath+" not found")
 	}
 	t.Initialized = true
+	t.read()
 	return t
 }
 
-func (t *TypeChangeLog) Dump() *TypeChangeLog {
-	prefix := t.MyType + ".Dump"
-	if !t.CheckErrInit(prefix) {
-		errs.Queue(prefix, t.Err)
-	}
-	if t.Err == nil {
-		ezlog.Log().N(prefix).Lm(t).Out()
+// Dump if [yes] is true
+func (t *TypeChangeLog) Dump(yes bool) *TypeChangeLog {
+	if yes {
+		prefix := t.MyType + ".Dump"
+		if t.CheckErrInit(prefix) {
+			ezlog.Log().N(prefix).Lm(t).Out()
+		}
 	}
 	return t
 }
 
+// Update [Content] buffer
 func (t *TypeChangeLog) Update() *TypeChangeLog {
 	prefix := t.MyType + ".Update"
-	var contentNew []string
-	if !t.CheckErrInit(prefix) {
-		return t
-	}
-	if *t.VerNew > *t.VerCurr {
-		ezlog.Debug().N(prefix).N(t.Pkg).M(t.VerCurr).M("->").M(t.VerNew).Out()
-		for _, line := range *t.Content {
-			ezlog.Debug().N(prefix).M(&line).Out()
-			if strings.Contains(line, *t.VerNew) {
-				t.Err = errors.New(*t.FileChangeLog + " contains " + *t.VerNew)
-				break
-			} else if line != "" {
-				contentNew = append(contentNew, line)
+	if t.CheckErrInit(prefix) {
+		var contentNew []string
+		if *t.VerNew > *t.VerCurr {
+			ezlog.Debug().N(prefix).N(t.Pkg).M(t.VerCurr).M("->").M(t.VerNew).Out()
+			for _, line := range *t.Content {
+				ezlog.Debug().N(prefix).M(&line).Out()
+				if strings.Contains(line, *t.VerNew) {
+					t.Err = errors.New(*t.FileChangeLog + " contains " + *t.VerNew)
+					break
+				} else if line != "" {
+					contentNew = append(contentNew, line)
+				}
 			}
+			contentNew = append(contentNew, "- "+*t.VerNew)
+			contentNew = append(contentNew, "  - Auto update to "+*t.VerNew)
+			t.Content = &contentNew
+		} else {
+			t.Err = errs.New(prefix, "Version not newer")
 		}
-	} else {
-		t.Err = errors.New(": Version not newer")
 	}
-	if t.Err == nil {
-		contentNew = append(contentNew, "- "+*t.VerNew)
-		contentNew = append(contentNew, "  - Auto update to "+*t.VerNew)
-		t.Content = &contentNew
-	}
-	errs.Queue(prefix, t.Err)
 	return t
 }
 
-// Read README.md into `Content`
-func (t *TypeChangeLog) Read() *TypeChangeLog {
+// read README.md into `Content`
+func (t *TypeChangeLog) read() *TypeChangeLog {
 	prefix := t.MyType + ".Read"
-	if t.Err != nil {
-		return t
-	}
-	if !t.Initialized {
-		t.Err = errors.New("not initialized")
-	}
-	if t.Err == nil {
+	if t.CheckErrInit(prefix) {
 		t.Content, t.Err = file.ReadStrArray(t.FilePath)
 		if t.Err != nil {
-			t.Err = errors.New(t.FilePath + " not found")
-		} else {
+			t.Err = errs.New(prefix, t.FilePath+": "+t.Err.Error())
 		}
 	}
-	errs.Queue(prefix, t.Err)
 	return t
 }
 
 // Write `Content` into README.md
 func (t *TypeChangeLog) Write() *TypeChangeLog {
 	prefix := t.MyType + ".Write"
-	if !t.CheckErrInit(prefix) {
-		return t
-	}
-	if t.Err == nil {
+	if t.CheckErrInit(prefix) {
 		fileStats, err := os.Stat(t.FilePath)
-		if err != nil {
-			// Should never happen at this stage, but ...
-			t.Err = err
-		} else {
+		if err == nil {
 			file.WriteStrArray(t.FilePath, t.Content, fileStats.Mode())
+		} else {
+			// Should never happen at this stage, but ...
+			t.Err = errs.New(prefix, t.FilePath+": "+err.Error())
 		}
 	}
-	errs.Queue(prefix, t.Err)
 	return t
 }

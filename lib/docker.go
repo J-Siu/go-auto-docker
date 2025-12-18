@@ -97,64 +97,56 @@ func (t *TypeDocker) New(dir *string, debug, verbose bool) *TypeDocker {
 			t.Err = errors.New(*dir + "(" + t.Pkg + ") <package=version> not found in docker file")
 			errs.Queue(prefix, t.Err)
 		}
-	} else {
-		errs.Queue(prefix, t.Err)
 	}
 	return t
 }
 
 func (t *TypeDocker) Updated() bool { return t.updated }
 
-func (t *TypeDocker) BuildTest() *TypeDocker {
-	prefix := t.MyType + ".BuildTest"
-	if !t.CheckErrInit(prefix) {
-		errs.Queue(prefix, t.Err)
-	}
-	if t.Err == nil {
-		var (
-			imgName = t.Pkg + ":" + "auto_docker"
-			args    = []string{"build", "--quiet", "-t", imgName, "."}
-			myCmd   = cmd.Run("docker", &args, &t.Dir)
-		)
-		t.Err = myCmd.Err
-		if t.Err == nil {
-			// RUN_CMD "docker image rm ${_img}"
-			args := []string{"image", "rm", imgName}
-			myCmd = cmd.Run("docker", &args, &t.Dir)
+// BuildTest if [yes] is true
+func (t *TypeDocker) BuildTest(yes bool) *TypeDocker {
+	if yes {
+		prefix := t.MyType + ".BuildTest"
+		if t.CheckErrInit(prefix) {
+			var (
+				imgName = t.Pkg + ":" + "auto_docker"
+				args    = []string{"build", "--quiet", "-t", imgName, "."}
+				myCmd   = cmd.Run("docker", &args, &t.Dir)
+			)
 			t.Err = myCmd.Err
-		}
-		if t.Verbose || t.Debug {
 			if t.Err == nil {
-				ezlog.Log().N(prefix).N(imgName).Msg("Success").Out()
-			} else {
-				ezlog.Log().N(prefix).N(imgName).Msg("Failed").Out()
+				// RUN_CMD "docker image rm ${_img}"
+				args := []string{"image", "rm", imgName}
+				myCmd = cmd.Run("docker", &args, &t.Dir)
+				t.Err = myCmd.Err
+			}
+			if t.Verbose || t.Debug {
+				if t.Err == nil {
+					ezlog.Log().N(prefix).N(imgName).Msg("Success").Out()
+				} else {
+					ezlog.Log().N(prefix).N(imgName).Msg("Failed").Out()
+				}
 			}
 		}
 	}
 	return t
 }
 
-// Dump if `dump` is `true`
-func (t *TypeDocker) Dump(dump bool) *TypeDocker {
-	if dump {
+// Dump if [yes] is `true`
+func (t *TypeDocker) Dump(yes bool) *TypeDocker {
+	if yes {
 		prefix := t.MyType + ".Dump"
-		if !t.CheckErrInit(prefix) {
-			errs.Queue(prefix, t.Err)
-		}
-		if t.Err == nil {
+		if t.CheckErrInit(prefix) {
 			ezlog.Log().N(prefix).Lm(t).Out()
 		}
 	}
 	return t
 }
 
-// Update `Content`
+// Update [Content] buffer
 func (t *TypeDocker) Update(dbAlpine *TypeDbAlpine) *TypeDocker {
 	prefix := t.MyType + ".Update"
-	if !t.CheckErrInit(prefix) {
-		errs.Queue(prefix, t.Err)
-	}
-	if t.Err == nil {
+	if t.CheckErrInit(prefix) {
 		// Check for new version
 		for _, b := range t.Repo {
 			verNew := *dbAlpine.PkgVerGet(t.Pkg, t.Branch, b)
@@ -182,18 +174,16 @@ func (t *TypeDocker) Update(dbAlpine *TypeDbAlpine) *TypeDocker {
 // Write `Content` to Dockerfile if Updated() == true
 func (t *TypeDocker) Write() *TypeDocker {
 	prefix := t.MyType + ".Write"
-	if !t.CheckErrInit(prefix) {
-		errs.Queue(prefix, t.Err)
-	}
-	if t.Err == nil && t.updated {
-		fileStats, err := os.Stat(t.FilePath)
-		if err != nil {
-			// Should never happen at this stage, but ...
-			t.Err = err
-		} else {
-			file.WriteStrArray(t.FilePath, t.Content, fileStats.Mode())
+	if t.CheckErrInit(prefix) {
+		if t.updated {
+			fileStats, err := os.Stat(t.FilePath)
+			if err == nil {
+				file.WriteStrArray(t.FilePath, t.Content, fileStats.Mode())
+			} else {
+				// Should never happen at this stage, but ...
+				t.Err = errs.New(prefix, t.FilePath+": "+err.Error())
+			}
 		}
-		errs.Queue(prefix, t.Err)
 	}
 	return t
 }
@@ -201,14 +191,10 @@ func (t *TypeDocker) Write() *TypeDocker {
 // Read Dockerfile into `Content`
 func (t *TypeDocker) read() *TypeDocker {
 	prefix := t.MyType + ".read"
-	if !t.CheckErrInit(prefix) {
-		errs.Queue(prefix, t.Err)
-	}
-	if t.Err == nil {
+	if t.CheckErrInit(prefix) {
 		t.Content, t.Err = file.ReadStrArray(t.FilePath)
 		if t.Err != nil {
-			t.Err = errors.New(t.FilePath + ": " + t.Err.Error())
-			errs.Queue(prefix, t.Err)
+			t.Err = errs.New(prefix, t.FilePath+": "+t.Err.Error())
 		}
 	}
 	return t
@@ -222,10 +208,7 @@ func (t *TypeDocker) read() *TypeDocker {
 //   - RUN: <Pkg=*>
 func (t *TypeDocker) extract() *TypeDocker {
 	prefix := t.MyType + ".extract"
-	if !t.CheckErrInit(prefix) {
-		errs.Queue(prefix, t.Err)
-	}
-	if t.Err == nil {
+	if t.CheckErrInit(prefix) {
 		testing := "testing"
 		branchTesting := t.Branch + "/" + testing
 		for _, line := range *t.Content {
