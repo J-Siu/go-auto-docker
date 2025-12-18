@@ -51,6 +51,7 @@ type TypeDocker struct {
 	Pkg    string   `json:"pkg,omitempty"`
 	PkgRun string   `json:"pkg_run,omitempty"` // The <Pkg=*> string in RUN line
 
+	updated bool
 	VerCurr string `json:"ver_curr,omitempty"`
 	VerNew  string `json:"ver_new,omitempty"`
 
@@ -67,6 +68,7 @@ func (t *TypeDocker) New(dir *string, debug, verbose bool) *TypeDocker {
 	t.MyType = "TypeDocker"
 	prefix := t.MyType + ".New"
 
+	t.updated = false
 	t.Verbose = verbose
 	t.Repo = []string{"main", "community"}
 	t.Dir = *dir
@@ -100,6 +102,8 @@ func (t *TypeDocker) New(dir *string, debug, verbose bool) *TypeDocker {
 	}
 	return t
 }
+
+func (t *TypeDocker) Updated() bool { return t.updated }
 
 func (t *TypeDocker) BuildTest() *TypeDocker {
 	prefix := t.MyType + ".BuildTest"
@@ -144,7 +148,9 @@ func (t *TypeDocker) Dump() *TypeDocker {
 // Update `Content`
 func (t *TypeDocker) Update(dbAlpine *TypeDbAlpine) *TypeDocker {
 	prefix := t.MyType + ".Update"
-	t.CheckErrInit(prefix)
+	if !t.CheckErrInit(prefix) {
+		errs.Queue(prefix, t.Err)
+	}
 	if t.Err == nil {
 		// Check for new version
 		for _, b := range t.Repo {
@@ -156,7 +162,8 @@ func (t *TypeDocker) Update(dbAlpine *TypeDbAlpine) *TypeDocker {
 				}
 			}
 		}
-		if t.VerNew > t.VerCurr {
+		t.updated = t.VerNew > t.VerCurr
+		if t.updated {
 			ezlog.Debug().N(prefix).N(t.Pkg).M(t.VerCurr).M("->").M(t.VerNew).Out()
 			pkgRunNew := t.Pkg + "=" + t.VerNew
 			for index := range *t.Content {
@@ -169,13 +176,13 @@ func (t *TypeDocker) Update(dbAlpine *TypeDbAlpine) *TypeDocker {
 	return t
 }
 
-// Write `Content` to Dockerfile
+// Write `Content` to Dockerfile if Updated() == true
 func (t *TypeDocker) Write() *TypeDocker {
 	prefix := t.MyType + ".Write"
 	if !t.CheckErrInit(prefix) {
 		errs.Queue(prefix, t.Err)
 	}
-	if t.Err == nil {
+	if t.Err == nil && t.updated {
 		fileStats, err := os.Stat(t.FilePath)
 		if err != nil {
 			// Should never happen at this stage, but ...
@@ -197,7 +204,7 @@ func (t *TypeDocker) read() *TypeDocker {
 	if t.Err == nil {
 		t.Content, t.Err = file.ReadStrArray(t.FilePath)
 		if t.Err != nil {
-			t.Err = errors.New(t.FilePath + " not found")
+			t.Err = errors.New(t.FilePath + ": " + t.Err.Error())
 			errs.Queue(prefix, t.Err)
 		}
 	}
