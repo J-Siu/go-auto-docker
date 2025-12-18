@@ -134,13 +134,16 @@ func (t *TypeDocker) BuildTest() *TypeDocker {
 	return t
 }
 
-func (t *TypeDocker) Dump() *TypeDocker {
-	prefix := t.MyType + ".Dump"
-	if !t.CheckErrInit(prefix) {
-		errs.Queue(prefix, t.Err)
-	}
-	if t.Err == nil {
-		ezlog.Log().N(prefix).Lm(t).Out()
+// Dump if `dump` is `true`
+func (t *TypeDocker) Dump(dump bool) *TypeDocker {
+	if dump {
+		prefix := t.MyType + ".Dump"
+		if !t.CheckErrInit(prefix) {
+			errs.Queue(prefix, t.Err)
+		}
+		if t.Err == nil {
+			ezlog.Log().N(prefix).Lm(t).Out()
+		}
 	}
 	return t
 }
