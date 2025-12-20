@@ -29,6 +29,6 @@ type Idb interface {
 	Dump(bool) Idb
 	Update() Idb
 	Err() error
-	Search(pkg string, exact bool) Idb
+	Search(pkg string, exact bool) *[]*[]string
 	VerGet(pkg string, branch, repo string) (ver *string)
 }

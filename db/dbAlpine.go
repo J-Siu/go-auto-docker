@@ -202,8 +202,11 @@ func (t *TypeDbAlpine) Update() Idb {
 // Search
 //   - Output result to stdout
 //   - Return immediately on error
-func (t *TypeDbAlpine) Search(pkg string, exact bool) Idb {
+func (t *TypeDbAlpine) Search(pkg string, exact bool) *[]*[]string {
 	prefix := t.MyType + ".Search"
+	var (
+		strArrArr []*[]string
+	)
 	if t.CheckErrInit(prefix) {
 		ezlog.Debug().N(prefix).TxtStart().Out()
 		if t.Db == nil {
@@ -224,12 +227,14 @@ func (t *TypeDbAlpine) Search(pkg string, exact bool) Idb {
 		}
 		if t.Base.Err == nil {
 			for _, r := range rows {
-				ezlog.Log().M(r.Pkg).M(r.Ver).M(r.Repo).M(r.Branch).M(r.Arch).Out()
+				// ezlog.Log().M(r.Pkg).M(r.Ver).M(r.Repo).M(r.Branch).M(r.Arch).Out()
+				strArr := []string{r.Pkg, r.Ver, r.Repo, r.Branch, r.Arch}
+				strArrArr = append(strArrArr, &strArr)
 			}
 		}
 		ezlog.Debug().N(prefix).TxtEnd().Out()
 	}
-	return t
+	return &strArrArr
 }
 
 func (t *TypeDbAlpine) VerGet(pkg string, branch, repo string) (ver *string) {
