@@ -36,10 +36,8 @@ var dbUpdateCmd = &cobra.Command{
 	Aliases: []string{"u"},
 	Short:   "Update database",
 	Run: func(cmd *cobra.Command, args []string) {
-		global.DbAlpine.
-			New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch).
-			DbUpdate()
-		errs.Queue("", global.DbAlpine.Err)
+		global.Db.Update()
+		errs.Queue("", global.Db.Err())
 	},
 }
 

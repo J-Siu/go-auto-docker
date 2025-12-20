@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package lib
+package db
 
 import (
 	"errors"
@@ -80,6 +80,10 @@ type TypeDbAlpineRecord struct {
 	Ver    string `json:"Ver"`
 }
 
+func (t *TypeDbAlpine) Err() error {
+	return t.Base.Err
+}
+
 func (t *TypeDbAlpine) New(dirCache, dirDb *string, alpineBranch *[]string) *TypeDbAlpine {
 	t.Base = new(basestruct.Base)
 	t.Initialized = true
@@ -117,26 +121,26 @@ func (t *TypeDbAlpine) setDefault(alpineBranch *[]string) *TypeDbAlpine {
 
 // DBConnect
 //   - if database does not exist, an empty one will be created
-func (t *TypeDbAlpine) DbConnect() *TypeDbAlpine {
-	prefix := t.MyType + ".DBConnect"
+func (t *TypeDbAlpine) Connect() Idb {
+	prefix := t.MyType + ".Connect"
 	if t.CheckErrInit(prefix) {
 		ezlog.Debug().N(prefix).TxtStart().Out()
 		ezlog.Debug().N(prefix).M(t.FileDb).Out()
 
-		if t.Err == nil {
-			t.Err = os.MkdirAll(t.DirDb, os.ModePerm)
+		if t.Base.Err == nil {
+			t.Base.Err = os.MkdirAll(t.DirDb, os.ModePerm)
 		}
 
-		if t.Err == nil {
-			t.Db, t.Err = gorm.Open(
+		if t.Base.Err == nil {
+			t.Db, t.Base.Err = gorm.Open(
 				sqlite.Open(t.FileDb),
 				&gorm.Config{
 					QueryFields: true,
 					Logger:      logger.Default.LogMode(logger.Silent),
 				},
 			)
-			if t.Err != nil {
-				t.Err = errors.New("cannot open " + t.FileDb)
+			if t.Base.Err != nil {
+				t.Base.Err = errors.New("cannot open " + t.FileDb)
 			}
 		}
 
@@ -145,27 +149,27 @@ func (t *TypeDbAlpine) DbConnect() *TypeDbAlpine {
 	return t
 }
 
-// DbDump()
+// Dump()
 //   - This must be called after TypeDbAlpine.New()
-//   - DbDump DB to stdout
+//   - Dump DB to stdout
 //   - Only dump if [yes] is true
-func (t *TypeDbAlpine) DbDump(yes bool) *TypeDbAlpine {
-	prefix := t.MyType + ".DbDump"
+func (t *TypeDbAlpine) Dump(yes bool) Idb {
+	prefix := t.MyType + ".Dump"
 	if t.CheckErrInit(prefix) {
 		ezlog.Debug().N(prefix).TxtStart().Out()
 		if t.Db == nil {
-			t.Err = errors.New("database not connected")
+			t.Base.Err = errors.New("database not connected")
 		}
 
 		var rows array.Array[TypeDbAlpineRecord]
-		if t.Err == nil {
+		if t.Base.Err == nil {
 			result := t.Db.
 				// Unscoped().
 				Select([]string{"Pkg", "Ver", "Repo", "Branch", "Arch"}).
 				Find(&rows)
-			t.Err = result.Error
+			t.Base.Err = result.Error
 		}
-		if t.Err == nil {
+		if t.Base.Err == nil {
 			ezlog.Log().M(rows).Out()
 			ezlog.Log().N("Rows").M(len(rows)).Out()
 		}
@@ -176,38 +180,37 @@ func (t *TypeDbAlpine) DbDump(yes bool) *TypeDbAlpine {
 }
 
 // Return immediately on error
-func (t *TypeDbAlpine) DbUpdate() *TypeDbAlpine {
-	prefix := t.MyType + ".DbUpdate"
-
+func (t *TypeDbAlpine) Update() Idb {
+	prefix := t.MyType + ".Update"
 	if t.CheckErrInit(prefix) {
 		ezlog.Debug().N(prefix).TxtStart().Out()
-		t.Err = os.RemoveAll(t.DirDb) // Delete first
-		if t.Err == nil {
-			t.DbConnect()
+		t.Base.Err = os.RemoveAll(t.DirDb) // Delete first
+		if t.Base.Err == nil {
+			t.Connect()
 		}
-		if t.Err == nil {
+		if t.Base.Err == nil {
 			t.Db.AutoMigrate(&TypeDbAlpineRecord{})
 		}
-		if t.Err == nil {
-			t.Err = t.dbDownload()
+		if t.Base.Err == nil {
+			t.Base.Err = t.idxUpdate()
 		}
 		ezlog.Debug().N(prefix).TxtEnd().Out()
 	}
 	return t
 }
 
-// PkgSearch
+// Search
 //   - Output result to stdout
 //   - Return immediately on error
-func (t *TypeDbAlpine) PkgSearch(pkg string, exact bool) *TypeDbAlpine {
-	prefix := t.MyType + ".PkgSearch"
+func (t *TypeDbAlpine) Search(pkg string, exact bool) Idb {
+	prefix := t.MyType + ".Search"
 	if t.CheckErrInit(prefix) {
 		ezlog.Debug().N(prefix).TxtStart().Out()
 		if t.Db == nil {
-			t.Err = errors.New("database not connected")
+			t.Base.Err = errors.New("database not connected")
 		}
 		var rows []TypeDbAlpineRecord
-		if t.Err == nil {
+		if t.Base.Err == nil {
 			result := t.Db.
 				Unscoped().
 				Select([]string{"Pkg", "Ver", "Branch", "Repo", "Arch"})
@@ -217,9 +220,9 @@ func (t *TypeDbAlpine) PkgSearch(pkg string, exact bool) *TypeDbAlpine {
 				result = result.Where("Pkg LIKE ?", "%"+pkg+"%")
 			}
 			result = result.Find(&rows)
-			t.Err = result.Error
+			t.Base.Err = result.Error
 		}
-		if t.Err == nil {
+		if t.Base.Err == nil {
 			for _, r := range rows {
 				ezlog.Log().M(r.Pkg).M(r.Ver).M(r.Repo).M(r.Branch).M(r.Arch).Out()
 			}
@@ -229,15 +232,15 @@ func (t *TypeDbAlpine) PkgSearch(pkg string, exact bool) *TypeDbAlpine {
 	return t
 }
 
-func (t *TypeDbAlpine) PkgVerGet(pkg string, branch string, repo string) (ver *string) {
-	prefix := t.MyType + ".PkgVerGet"
+func (t *TypeDbAlpine) VerGet(pkg string, branch, repo string) (ver *string) {
+	prefix := t.MyType + ".VerGet"
 	var row TypeDbAlpineRecord
 	if t.CheckErrInit(prefix) {
 		ezlog.Debug().N(prefix).TxtStart().Out()
 		if t.Db == nil {
-			t.Err = errors.New("database not connected")
+			t.Base.Err = errors.New("database not connected")
 		}
-		if t.Err == nil {
+		if t.Base.Err == nil {
 			result := t.Db.
 				Unscoped().
 				Where(map[string]interface{}{
@@ -247,7 +250,7 @@ func (t *TypeDbAlpine) PkgVerGet(pkg string, branch string, repo string) (ver *s
 					"Pkg":    pkg,
 				}).
 				Find(&row)
-			t.Err = result.Error
+			t.Base.Err = result.Error
 		}
 		ezlog.Debug().N(prefix).TxtEnd().Out()
 	}
@@ -255,8 +258,8 @@ func (t *TypeDbAlpine) PkgVerGet(pkg string, branch string, repo string) (ver *s
 }
 
 // Wrapper for Alpine APKINDEX download and database create/update
-func (t *TypeDbAlpine) dbDownload() (err error) {
-	prefix := t.MyType + ".dbDownload"
+func (t *TypeDbAlpine) idxUpdate() (err error) {
+	prefix := t.MyType + ".idxUpdate"
 	ezlog.Debug().N(prefix).TxtStart().Out()
 	for _, branch := range t.Branch {
 		for _, repo := range t.Repository {

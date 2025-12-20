@@ -24,7 +24,10 @@ THE SOFTWARE.
 
 package global
 
-import "github.com/J-Siu/go-auto-docker/lib"
+import (
+	"github.com/J-Siu/go-auto-docker/db"
+	"github.com/J-Siu/go-auto-docker/lib"
+)
 
 var (
 	Conf         lib.TypeConf
@@ -32,5 +35,5 @@ var (
 	FlagUpdate   lib.TypeFlagUpdate
 	FlagDbSearch lib.TypeFlagDbSearch
 
-	DbAlpine lib.TypeDbAlpine
+	Db db.Idb
 )

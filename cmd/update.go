@@ -44,13 +44,10 @@ var updateCmd = &cobra.Command{
 			err error
 		)
 
-		global.DbAlpine.New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch)
 		if global.FlagUpdate.UpdateDb {
-			global.DbAlpine.DbUpdate()
-		} else {
-			global.DbAlpine.DbConnect()
+			global.Db.Update()
 		}
-		err = global.DbAlpine.Err
+		err = global.Db.Err()
 
 		if err != nil {
 			return
@@ -75,7 +72,7 @@ var updateCmd = &cobra.Command{
 			if err == nil {
 				docker.
 					New(&repo.DirCache, global.Flag.Debug, global.Flag.Verbose).
-					Update(&global.DbAlpine).
+					Update(global.Db).
 					Write().
 					Dump(global.Flag.Debug).
 					BuildTest(global.FlagUpdate.BuildTest)

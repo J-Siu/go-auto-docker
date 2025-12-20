@@ -27,6 +27,7 @@ package cmd
 import (
 	"os"
 
+	"github.com/J-Siu/go-auto-docker/db"
 	"github.com/J-Siu/go-auto-docker/global"
 	"github.com/J-Siu/go-auto-docker/lib"
 	"github.com/J-Siu/go-helper/v2/errs"
@@ -46,6 +47,10 @@ var rootCmd = &cobra.Command{
 		}
 		ezlog.Debug().N("Version").M(global.Version).Ln("Flag").Lm(&global.Flag).Out()
 		global.Conf.New()
+
+		global.Db = new(db.TypeDbAlpine).
+			New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch).
+			Connect()
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
 		if errs.NotEmpty() {

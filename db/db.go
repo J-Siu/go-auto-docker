@@ -22,12 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package lib
+package db
 
-type Db interface {
-	DbConnect()
-	DbDump()
-	DbUpdate()
-	PkgSearch()
-	PkgVerGet()
+type Idb interface {
+	Connect() Idb
+	Dump(bool) Idb
+	Update() Idb
+	Err() error
+	Search(pkg string, exact bool) Idb
+	VerGet(pkg string, branch, repo string) (ver *string)
 }

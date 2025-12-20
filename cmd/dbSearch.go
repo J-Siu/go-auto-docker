@@ -15,15 +15,12 @@ var dbSearchCmd = &cobra.Command{
 	Aliases: []string{"s"},
 	Short:   "Search database",
 	Run: func(cmd *cobra.Command, args []string) {
-		global.DbAlpine.
-			New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch).
-			DbConnect()
-		if global.DbAlpine.Err == nil {
+		if global.Db.Err() == nil {
 			for _, pkg := range args {
-				global.DbAlpine.PkgSearch(pkg, global.FlagDbSearch.Exact)
+				global.Db.Search(pkg, global.FlagDbSearch.Exact)
 			}
 		}
-		errs.Queue("", global.DbAlpine.Err)
+		errs.Queue("", global.Db.Err())
 	},
 }
 

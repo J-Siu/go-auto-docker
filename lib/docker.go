@@ -30,6 +30,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/J-Siu/go-auto-docker/db"
 	"github.com/J-Siu/go-helper/v2/basestruct"
 	"github.com/J-Siu/go-helper/v2/cmd"
 	"github.com/J-Siu/go-helper/v2/errs"
@@ -144,13 +145,13 @@ func (t *TypeDocker) Dump(yes bool) *TypeDocker {
 }
 
 // Update [Content] buffer
-func (t *TypeDocker) Update(dbAlpine *TypeDbAlpine) *TypeDocker {
+func (t *TypeDocker) Update(db db.Idb) *TypeDocker {
 	prefix := t.MyType + ".Update"
 	if t.CheckErrInit(prefix) {
 		// Check for new version
 		for _, b := range t.Repo {
-			verNew := *dbAlpine.PkgVerGet(t.Pkg, t.Branch, b)
-			if dbAlpine.Err == nil {
+			verNew := *db.VerGet(t.Pkg, t.Branch, b)
+			if db.Err() == nil {
 				if verNew > t.VerNew {
 					t.VerNew = verNew
 					ezlog.Debug().N(prefix).N(t.Branch + "/" + b).N(t.Pkg).M(verNew).M(">").M(t.VerCurr).Out()

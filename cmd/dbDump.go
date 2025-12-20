@@ -36,11 +36,8 @@ var dbDumpCmd = &cobra.Command{
 	Aliases: []string{"d"},
 	Short:   "Dump database",
 	Run: func(cmd *cobra.Command, args []string) {
-		global.DbAlpine.
-			New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch).
-			DbConnect().
-			DbDump(true)
-		errs.Queue("", global.DbAlpine.Err)
+		global.Db.Dump(true)
+		errs.Queue("", global.Db.Err())
 	},
 }
 
