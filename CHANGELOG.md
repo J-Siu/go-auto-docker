@@ -18,4 +18,5 @@
 - v0.7.3
   - update workflow
 - v0.7.4
-  - fix: build test only when updated
+  - add Idb interface
+  - fix docker only build test when updated
