@@ -105,7 +105,7 @@ func (t *TypeDocker) Updated() bool { return t.updated }
 
 // BuildTest if [yes] is true
 func (t *TypeDocker) BuildTest(yes bool) *TypeDocker {
-	if yes {
+	if yes && t.updated {
 		prefix := t.MyType + ".BuildTest"
 		if t.CheckErrInit(prefix) {
 			var (
