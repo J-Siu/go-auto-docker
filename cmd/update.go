@@ -36,10 +36,11 @@ var updateCmd = &cobra.Command{
 	Use:     "update",
 	Aliases: []string{"u"},
 	Short:   "Update Alpine package version",
-	Run: func(cmd *cobra.Command, args []string) {
-		prefix := "update"
+	PreRun: func(cmd *cobra.Command, args []string) {
 		ezlog.Debug().N("FlagUpdate").Lm(&global.FlagUpdate).Out()
-
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		prefix := "Update"
 		var (
 			err error
 		)
@@ -66,8 +67,8 @@ var updateCmd = &cobra.Command{
 			// Dockerfile file
 			if err == nil {
 				docker.
-					New(&repo.DirCache, global.Flag.Debug, global.Flag.Verbose).
-					Update(global.Db).
+					New(&repo.DirCache, global.Db, global.Flag.Debug, global.Flag.Verbose).
+					Update().
 					Write().
 					Dump(global.Flag.Debug).
 					BuildTest(global.FlagUpdate.BuildTest)

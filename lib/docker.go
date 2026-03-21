@@ -52,6 +52,7 @@ type TypeDocker struct {
 	Pkg    string   `json:"pkg,omitempty"`
 	PkgRun string   `json:"pkg_run,omitempty"` // The <Pkg=*> string in RUN line
 
+	db      db.Idb
 	updated bool
 	VerCurr string `json:"ver_curr,omitempty"`
 	VerNew  string `json:"ver_new,omitempty"`
@@ -63,12 +64,13 @@ type TypeDocker struct {
 // Assuming branch = main + community
 //
 // Read and extract information from Dockerfile
-func (t *TypeDocker) New(dir *string, debug, verbose bool) *TypeDocker {
+func (t *TypeDocker) New(dir *string, db db.Idb, debug, verbose bool) *TypeDocker {
 	t.Base = new(basestruct.Base)
 	t.Initialized = true
 	t.MyType = "TypeDocker"
 	prefix := t.MyType + ".New"
 
+	t.db = db
 	t.updated = false
 	t.Verbose = verbose
 	t.Repo = []string{"main", "community"}
@@ -133,6 +135,23 @@ func (t *TypeDocker) BuildTest(yes bool) *TypeDocker {
 	return t
 }
 
+func (t *TypeDocker) Check() *TypeDocker {
+	prefix := t.MyType + ".Check"
+	if t.CheckErrInit(prefix) {
+		// Check for new version
+		for _, b := range t.Repo {
+			verNew := *t.db.VerGet(t.Pkg, t.Branch, b)
+			if t.db.Err() == nil {
+				if verNew > t.VerNew {
+					t.VerNew = verNew
+					ezlog.Debug().N(prefix).N(t.Branch + "/" + b).N(t.Pkg).M(verNew).M(">").M(t.VerCurr).Out()
+				}
+			}
+		}
+	}
+	return t
+}
+
 // Dump if [yes] is `true`
 func (t *TypeDocker) Dump(yes bool) *TypeDocker {
 	if yes {
@@ -145,13 +164,13 @@ func (t *TypeDocker) Dump(yes bool) *TypeDocker {
 }
 
 // Update [Content] buffer
-func (t *TypeDocker) Update(db db.Idb) *TypeDocker {
+func (t *TypeDocker) Update() *TypeDocker {
 	prefix := t.MyType + ".Update"
 	if t.CheckErrInit(prefix) {
 		// Check for new version
 		for _, b := range t.Repo {
-			verNew := *db.VerGet(t.Pkg, t.Branch, b)
-			if db.Err() == nil {
+			verNew := *t.db.VerGet(t.Pkg, t.Branch, b)
+			if t.db.Err() == nil {
 				if verNew > t.VerNew {
 					t.VerNew = verNew
 					ezlog.Debug().N(prefix).N(t.Branch + "/" + b).N(t.Pkg).M(verNew).M(">").M(t.VerCurr).Out()
