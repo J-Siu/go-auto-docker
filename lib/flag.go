@@ -26,14 +26,14 @@ package lib
 
 // Holding all flags from command line
 type TypeFlag struct {
-	Debug   bool // Enable debug output
-	Verbose bool
+	Debug    bool // Enable debug output
+	UpdateDb bool // Update package database
+	Verbose  bool
 }
 
 // Holding all flags for update
 type TypeFlagUpdate struct {
 	Commit    bool // Apply git commit. Only work with -save
-	UpdateDb  bool // Update package database
 	BuildTest bool // Do not perform docker build
 	Save      bool // Write back to project folder
 	Tag       bool // Apply git tag. Only work with -commit

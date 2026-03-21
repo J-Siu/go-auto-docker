@@ -51,6 +51,11 @@ var rootCmd = &cobra.Command{
 		global.Db = new(db.TypeDbAlpine).
 			New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch).
 			Connect()
+		if global.Flag.UpdateDb {
+			ezlog.Log().M("db update").Out()
+			global.Db.Update()
+		}
+		errs.Errs().Add(global.Db.Err())
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
 		if errs.NotEmpty() {
@@ -68,6 +73,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Debug, "debug", "d", false, "enable debug")
-	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Verbose, "verbose", "v", false, "enable debug")
+	rootCmd.PersistentFlags().BoolVarP(&global.Flag.UpdateDb, "updatedb", "u", false, "update DB")
+	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Verbose, "verbose", "v", false, "enable verbose")
 	rootCmd.PersistentFlags().StringVarP(&global.Conf.FileConf, "config", "", lib.ConfDefault.FileConf, "config file")
 }

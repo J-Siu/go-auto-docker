@@ -44,11 +44,6 @@ var updateCmd = &cobra.Command{
 			err error
 		)
 
-		if global.FlagUpdate.UpdateDb {
-			global.Db.Update()
-		}
-		err = global.Db.Err()
-
 		if err != nil {
 			return
 		}
@@ -132,5 +127,4 @@ func init() {
 	cmd.Flags().BoolVarP(&global.FlagUpdate.BuildTest, "buildTest", "b", false, "so not perform docker build")
 	cmd.Flags().BoolVarP(&global.FlagUpdate.Save, "save", "s", false, "write back to project folder (cancel on error)")
 	cmd.Flags().BoolVarP(&global.FlagUpdate.Tag, "tag", "t", false, "apply git tag. (only work with --commit)")
-	cmd.Flags().BoolVarP(&global.FlagUpdate.UpdateDb, "updateDb", "u", false, "update Alpine package database")
 }
