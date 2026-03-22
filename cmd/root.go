@@ -41,6 +41,7 @@ var rootCmd = &cobra.Command{
 	Short:   "Mass updating single package Docker project base on Alpine Linux packages.",
 	Long:    `Automate update for README.md change log, apply tag according to package version. Also handle test build, git commit.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		prefix := "root"
 		ezlog.SetLogLevel(ezlog.ERR)
 		if global.Flag.Debug {
 			ezlog.SetLogLevel(ezlog.DEBUG)
@@ -55,7 +56,7 @@ var rootCmd = &cobra.Command{
 			ezlog.Log().M("db update").Out()
 			global.Db.Update()
 		}
-		errs.Errs().Add(global.Db.Err())
+		errs.Queue(prefix, global.Db.Err())
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
 		if errs.NotEmpty() {
