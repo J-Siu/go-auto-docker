@@ -35,7 +35,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Use:     "go-auto-docker",
 	Version: global.Version,
 	Short:   "Mass updating single package Docker project base on Alpine Linux packages.",
@@ -66,15 +66,15 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	err := rootCmd.Execute()
+	err := RootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Debug, "debug", "d", false, "enable debug")
-	rootCmd.PersistentFlags().BoolVarP(&global.Flag.UpdateDb, "updatedb", "u", false, "update DB")
-	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Verbose, "verbose", "v", false, "enable verbose")
-	rootCmd.PersistentFlags().StringVarP(&global.Conf.FileConf, "config", "", lib.ConfDefault.FileConf, "config file")
+	RootCmd.PersistentFlags().BoolVarP(&global.Flag.Debug, "debug", "d", false, "enable debug")
+	RootCmd.PersistentFlags().BoolVarP(&global.Flag.UpdateDb, "updatedb", "u", false, "update DB")
+	RootCmd.PersistentFlags().BoolVarP(&global.Flag.Verbose, "verbose", "v", false, "enable verbose")
+	RootCmd.PersistentFlags().StringVarP(&global.Conf.FileConf, "config", "", lib.ConfDefault.FileConf, "config file")
 }

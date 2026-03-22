@@ -126,7 +126,7 @@ var updateCmd = &cobra.Command{
 
 func init() {
 	cmd := updateCmd
-	rootCmd.AddCommand(cmd)
+	RootCmd.AddCommand(cmd)
 	cmd.Flags().BoolVarP(&global.FlagUpdate.Commit, "commit", "c", false, "apply git commit. Only work with -save")
 	cmd.Flags().BoolVarP(&global.FlagUpdate.BuildTest, "buildTest", "b", false, "so not perform docker build")
 	cmd.Flags().BoolVarP(&global.FlagUpdate.Save, "save", "s", false, "write back to project folder (cancel on error)")

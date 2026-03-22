@@ -79,5 +79,5 @@ var checkCmd = &cobra.Command{
 
 func init() {
 	cmd := checkCmd
-	rootCmd.AddCommand(cmd)
+	RootCmd.AddCommand(cmd)
 }
