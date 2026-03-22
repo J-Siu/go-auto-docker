@@ -20,3 +20,6 @@
 - v0.7.4
   - add Idb interface
   - fix docker only build test when updated
+- v1.0.0
+  - create tmp repo only if package has update
+  - use subcommand folder

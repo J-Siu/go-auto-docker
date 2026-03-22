@@ -25,5 +25,5 @@ THE SOFTWARE.
 package global
 
 var (
-	Version = "v0.7.4"
+	Version = "v1.0.0"
 )
