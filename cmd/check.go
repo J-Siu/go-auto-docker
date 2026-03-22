@@ -34,11 +34,11 @@ import (
 
 // checkCmd represents the check command
 var checkCmd = &cobra.Command{
-	Use:     "check",
+	Use:     "check <docker path>",
 	Aliases: []string{"c"},
 	Short:   "Check Alpine package update",
 	Run: func(cmd *cobra.Command, args []string) {
-		prefix := "Update"
+		prefix := "Check"
 
 		var (
 			err error
@@ -54,24 +54,22 @@ var checkCmd = &cobra.Command{
 
 		for _, workPath := range args {
 			docker := lib.TypeDocker{}
-			repo := lib.TypeRepository{}
-
-			// Repository copy to cache(tmp)
-			repo.
-				New(&workPath, &global.Conf.DirCache, &global.Conf.DirRepo, global.Flag.Verbose).
-				CopySrcToCache()
-			err = repo.Err
 
 			// Dockerfile file
 			if err == nil {
 				docker.
-					New(&repo.DirSrc, global.Db, global.Flag.Debug, global.Flag.Verbose).
-					Check()
+					New(&workPath, global.Db, global.Flag.Debug, global.Flag.Verbose)
 				err = docker.Err
 			}
 
 			if err == nil {
-				ezlog.Log().N(prefix).N("YES").N(docker.Pkg).M(docker.VerCurr).M("->").M(docker.VerNew).Out()
+				ezlog.Log().N(prefix).YesNo(docker.VerNew > docker.VerCurr).N(docker.Pkg).M(docker.VerCurr).M("->")
+				if docker.VerNew == "" {
+					ezlog.M("<package not found>")
+				} else {
+					ezlog.M(docker.VerNew)
+				}
+				ezlog.Out()
 			}
 
 			errs.Queue("", err)
