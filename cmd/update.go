@@ -33,7 +33,7 @@ import (
 )
 
 var updateCmd = &cobra.Command{
-	Use:     "update",
+	Use:     "update <docker path>",
 	Aliases: []string{"u"},
 	Short:   "Update Alpine package version",
 	PreRun: func(cmd *cobra.Command, args []string) {
@@ -42,7 +42,8 @@ var updateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		prefix := "Update"
 		var (
-			err error
+			err             error
+			updateAvailable bool
 		)
 
 		if err != nil {
@@ -58,64 +59,66 @@ var updateCmd = &cobra.Command{
 			repo := lib.TypeRepository{}
 			changelog := lib.TypeChangeLog{}
 
+			if err == nil {
+				docker.New(&workPath, global.Db, global.Flag.Debug, global.Flag.Verbose)
+				err = docker.Err
+			}
+			updateAvailable = docker.VerNew > docker.VerCurr
 			// Repository copy to cache(tmp)
-			repo.
-				New(&workPath, &global.Conf.DirCache, &global.Conf.DirRepo, global.Flag.Verbose).
-				CopySrcToCache()
-			err = repo.Err
+			if err == nil && updateAvailable {
+				repo.
+					New(&workPath, &global.Conf.DirCache, &global.Conf.DirRepo, global.Flag.Verbose).
+					CopySrcToCache()
+				err = repo.Err
+			}
 
 			// Dockerfile file
-			if err == nil {
+			if err == nil && updateAvailable {
 				docker.
 					New(&repo.DirCache, global.Db, global.Flag.Debug, global.Flag.Verbose).
 					Update().
-					Write().
 					Dump(global.Flag.Debug).
 					BuildTest(global.FlagUpdate.BuildTest)
 				err = docker.Err
 			}
 
-			if err == nil {
-				if docker.Updated() {
-					// README.md file. Depends on docker.VerCurr. Must be done after processing docker.
-					property := lib.TypeChangeLogProperty{
-						Dir:           &repo.DirCache,
-						FileChangeLog: &global.Conf.FileChangeLog,
-						Pkg:           &docker.Pkg,
-						VerCurr:       &docker.VerCurr,
-						VerNew:        &docker.VerNew,
-					}
-					changelog.
-						New(&property).
-						Update().
-						Write().
-						Dump(global.Flag.Debug)
-					err = changelog.Err
+			if err == nil && docker.Updated() {
+				// README.md file. Depends on docker.VerCurr. Must be done after processing docker.
+				property := lib.TypeChangeLogProperty{
+					Dir:           &repo.DirCache,
+					FileChangeLog: &global.Conf.FileChangeLog,
+					Pkg:           &docker.Pkg,
+					VerCurr:       &docker.VerCurr,
+					VerNew:        &docker.VerNew,
+				}
+				changelog.
+					New(&property).
+					Update().
+					Dump(global.Flag.Debug)
+				err = changelog.Err
 
-					// Repository commit and tag
-					if err == nil && global.FlagUpdate.Commit {
-						repo.Commit(docker.VerNew, global.FlagUpdate.Tag, true)
-						err = repo.Err
-					}
+				// Repository commit and tag
+				if err == nil && global.FlagUpdate.Commit {
+					repo.Commit(docker.VerNew, global.FlagUpdate.Tag, true)
+					err = repo.Err
+				}
 
-					// Repository copy back
-					if err == nil && global.FlagUpdate.Save {
-						repo.CopyCacheToSrc()
-					}
-
-					if err == nil {
-						ezlog.Log().N(prefix).N("YES").N(docker.Pkg).M(docker.VerCurr).M("->").M(docker.VerNew).Out()
-					}
-				} else {
-					ezlog.Log().N(prefix).N("NO").N(docker.Pkg).M(docker.VerCurr).M("->")
-					if docker.VerNew == "" {
-						ezlog.M("<package not found>")
-					} else {
-						ezlog.M(docker.VerNew)
-					}
-					ezlog.Out()
+				// Repository copy back
+				if err == nil && global.FlagUpdate.Save {
+					repo.CopyCacheToSrc()
 				}
 			}
+
+			if err == nil {
+				ezlog.Log().N(prefix).YesNo(docker.Updated()).N(docker.Pkg).M(docker.VerCurr).M("->")
+				if docker.VerNew == "" {
+					ezlog.M("<package not found>")
+				} else {
+					ezlog.M(docker.VerNew)
+				}
+				ezlog.Out()
+			}
+
 			errs.Queue("", err)
 		}
 	},
