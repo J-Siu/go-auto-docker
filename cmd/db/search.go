@@ -1,7 +1,7 @@
 /*
 Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 */
-package cmd
+package db
 
 import (
 	"fmt"
@@ -14,8 +14,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// dbSearchCmd represents the dbSearch command
-var dbSearchCmd = &cobra.Command{
+// searchCmd represents the dbSearch command
+var searchCmd = &cobra.Command{
 	Use:     "search",
 	Aliases: []string{"s"},
 	Short:   "Search database",
@@ -38,6 +38,6 @@ var dbSearchCmd = &cobra.Command{
 }
 
 func init() {
-	dbCmd.AddCommand(dbSearchCmd)
-	dbSearchCmd.Flags().BoolVarP(&global.FlagDbSearch.Exact, "exact", "e", false, "search exact word")
+	dbCmd.AddCommand(searchCmd)
+	searchCmd.Flags().BoolVarP(&global.FlagDbSearch.Exact, "exact", "e", false, "search exact word")
 }

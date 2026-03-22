@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package cmd
+package db
 
 import (
 	"github.com/J-Siu/go-auto-docker/global"
@@ -30,17 +30,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// dbUpdateCmd represents the dbUpdate command
-var dbUpdateCmd = &cobra.Command{
-	Use:     "update",
-	Aliases: []string{"u"},
-	Short:   "Update database",
+// dumpCmd represents the dbDump command
+var dumpCmd = &cobra.Command{
+	Use:     "dump",
+	Aliases: []string{"d"},
+	Short:   "Dump database",
 	Run: func(cmd *cobra.Command, args []string) {
-		global.Db.Update()
+		global.Db.Dump(true)
 		errs.Queue("", global.Db.Err())
 	},
 }
 
 func init() {
-	dbCmd.AddCommand(dbUpdateCmd)
+	dbCmd.AddCommand(dumpCmd)
 }
