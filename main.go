@@ -24,7 +24,10 @@ THE SOFTWARE.
 
 package main
 
-import "github.com/J-Siu/go-auto-docker/cmd"
+import (
+	"github.com/J-Siu/go-auto-docker/cmd"
+	_ "github.com/J-Siu/go-auto-docker/cmd/db"
+)
 
 func main() {
 	cmd.Execute()
