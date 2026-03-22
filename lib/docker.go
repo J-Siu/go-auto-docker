@@ -52,10 +52,10 @@ type TypeDocker struct {
 	Pkg    string   `json:"pkg,omitempty"`
 	PkgRun string   `json:"pkg_run,omitempty"` // The <Pkg=*> string in RUN line
 
-	db      db.Idb
-	updated bool
 	VerCurr string `json:"ver_curr,omitempty"`
 	VerNew  string `json:"ver_new,omitempty"`
+	db      db.Idb
+	updated bool
 
 	Debug   bool `json:"debug,omitempty"`
 	Verbose bool `json:"verbose,omitempty"`
@@ -71,7 +71,6 @@ func (t *TypeDocker) New(dir *string, db db.Idb, debug, verbose bool) *TypeDocke
 	prefix := t.MyType + ".New"
 
 	t.db = db
-	t.updated = false
 	t.Verbose = verbose
 	t.Repo = []string{"main", "community"}
 	t.Dir = *dir
@@ -100,6 +99,9 @@ func (t *TypeDocker) New(dir *string, db db.Idb, debug, verbose bool) *TypeDocke
 			t.Err = errors.New(*dir + "(" + t.Pkg + ") <package=version> not found in docker file")
 			errs.Queue(prefix, t.Err)
 		}
+	}
+	if t.Err == nil {
+		t.getVerNew()
 	}
 	return t
 }
@@ -135,23 +137,6 @@ func (t *TypeDocker) BuildTest(yes bool) *TypeDocker {
 	return t
 }
 
-func (t *TypeDocker) Check() *TypeDocker {
-	prefix := t.MyType + ".Check"
-	if t.CheckErrInit(prefix) {
-		// Check for new version
-		for _, b := range t.Repo {
-			verNew := *t.db.VerGet(t.Pkg, t.Branch, b)
-			if t.db.Err() == nil {
-				if verNew > t.VerNew {
-					t.VerNew = verNew
-					ezlog.Debug().N(prefix).N(t.Branch + "/" + b).N(t.Pkg).M(verNew).M(">").M(t.VerCurr).Out()
-				}
-			}
-		}
-	}
-	return t
-}
-
 // Dump if [yes] is `true`
 func (t *TypeDocker) Dump(yes bool) *TypeDocker {
 	if yes {
@@ -163,22 +148,11 @@ func (t *TypeDocker) Dump(yes bool) *TypeDocker {
 	return t
 }
 
-// Update [Content] buffer
+// Update [Content] buffer and write back
 func (t *TypeDocker) Update() *TypeDocker {
 	prefix := t.MyType + ".Update"
 	if t.CheckErrInit(prefix) {
-		// Check for new version
-		for _, b := range t.Repo {
-			verNew := *t.db.VerGet(t.Pkg, t.Branch, b)
-			if t.db.Err() == nil {
-				if verNew > t.VerNew {
-					t.VerNew = verNew
-					ezlog.Debug().N(prefix).N(t.Branch + "/" + b).N(t.Pkg).M(verNew).M(">").M(t.VerCurr).Out()
-				}
-			}
-		}
-		t.updated = t.VerNew > t.VerCurr
-		if t.updated {
+		if t.VerNew > t.VerCurr {
 			ezlog.Debug().N(prefix).N(t.Pkg).M(t.VerCurr).M("->").M(t.VerNew).Out()
 			pkgRunNew := t.Pkg + "=" + t.VerNew
 			for index := range *t.Content {
@@ -186,35 +160,10 @@ func (t *TypeDocker) Update() *TypeDocker {
 				// above will miss package version in RUN line if LABEL has local patch level(-pXX)
 				(*t.Content)[index] = strings.ReplaceAll((*t.Content)[index], t.PkgRun, pkgRunNew)
 			}
-		}
-	}
-	return t
-}
-
-// Write `Content` to Dockerfile if Updated() == true
-func (t *TypeDocker) Write() *TypeDocker {
-	prefix := t.MyType + ".Write"
-	if t.CheckErrInit(prefix) {
-		if t.updated {
-			fileStats, err := os.Stat(t.FilePath)
-			if err == nil {
-				file.WriteStrArray(t.FilePath, t.Content, fileStats.Mode())
-			} else {
-				// Should never happen at this stage, but ...
-				t.Err = errs.New(prefix, t.FilePath+": "+err.Error())
+			t.write()
+			if t.Err == nil {
+				t.updated = true
 			}
-		}
-	}
-	return t
-}
-
-// Read Dockerfile into `Content`
-func (t *TypeDocker) read() *TypeDocker {
-	prefix := t.MyType + ".read"
-	if t.CheckErrInit(prefix) {
-		t.Content, t.Err = file.ReadStrArray(t.FilePath)
-		if t.Err != nil {
-			t.Err = errs.New(prefix, t.FilePath+": "+t.Err.Error())
 		}
 	}
 	return t
@@ -273,6 +222,51 @@ func (t *TypeDocker) extract() *TypeDocker {
 					}
 				}
 			}
+		}
+	}
+	return t
+}
+
+func (t *TypeDocker) getVerNew() *TypeDocker {
+	prefix := t.MyType + ".getVerNew"
+
+	if t.CheckErrInit(prefix) {
+		// Check for new version
+		for _, b := range t.Repo {
+			verNew := *t.db.VerGet(t.Pkg, t.Branch, b)
+			if t.db.Err() == nil {
+				if verNew > t.VerNew {
+					t.VerNew = verNew
+					ezlog.Debug().N(prefix).N(t.Branch + "/" + b).N(t.Pkg).M(verNew).M(">").M(t.VerCurr).Out()
+				}
+			}
+		}
+	}
+	return t
+}
+
+// Read Dockerfile into `Content`
+func (t *TypeDocker) read() *TypeDocker {
+	prefix := t.MyType + ".read"
+	if t.CheckErrInit(prefix) {
+		t.Content, t.Err = file.ReadStrArray(t.FilePath)
+		if t.Err != nil {
+			t.Err = errs.New(prefix, t.FilePath+": "+t.Err.Error())
+		}
+	}
+	return t
+}
+
+// write `Content` to Dockerfile
+func (t *TypeDocker) write() *TypeDocker {
+	prefix := t.MyType + ".write"
+	if t.CheckErrInit(prefix) {
+		fileStats, err := os.Stat(t.FilePath)
+		if err == nil {
+			file.WriteStrArray(t.FilePath, t.Content, fileStats.Mode())
+		} else {
+			// Should never happen at this stage, but ...
+			t.Err = errs.New(prefix, t.FilePath+": "+err.Error())
 		}
 	}
 	return t
