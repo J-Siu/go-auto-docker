@@ -80,7 +80,7 @@ func (t *TypeChangeLog) Dump(yes bool) *TypeChangeLog {
 	return t
 }
 
-// Update [Content] buffer
+// Update [Content] buffer and write back
 func (t *TypeChangeLog) Update() *TypeChangeLog {
 	prefix := t.MyType + ".Update"
 	if t.CheckErrInit(prefix) {
@@ -99,6 +99,7 @@ func (t *TypeChangeLog) Update() *TypeChangeLog {
 			contentNew = append(contentNew, "- "+*t.VerNew)
 			contentNew = append(contentNew, "  - Auto update to "+*t.VerNew)
 			t.Content = &contentNew
+			t.write()
 		} else {
 			t.Err = errs.New(prefix, "Version not newer")
 		}
@@ -118,9 +119,9 @@ func (t *TypeChangeLog) read() *TypeChangeLog {
 	return t
 }
 
-// Write `Content` into README.md
-func (t *TypeChangeLog) Write() *TypeChangeLog {
-	prefix := t.MyType + ".Write"
+// write `Content` into README.md
+func (t *TypeChangeLog) write() *TypeChangeLog {
+	prefix := t.MyType + ".write"
 	if t.CheckErrInit(prefix) {
 		fileStats, err := os.Stat(t.FilePath)
 		if err == nil {
