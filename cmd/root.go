@@ -41,6 +41,7 @@ var rootCmd = &cobra.Command{
 	Short:   "Mass updating single package Docker project base on Alpine Linux packages.",
 	Long:    `Automate update for README.md change log, apply tag according to package version. Also handle test build, git commit.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		prefix := "root"
 		ezlog.SetLogLevel(ezlog.ERR)
 		if global.Flag.Debug {
 			ezlog.SetLogLevel(ezlog.DEBUG)
@@ -51,6 +52,11 @@ var rootCmd = &cobra.Command{
 		global.Db = new(db.TypeDbAlpine).
 			New(&global.Conf.DirCache, &global.Conf.DirDB, &global.Conf.AlpineBranch).
 			Connect()
+		if global.Flag.UpdateDb {
+			ezlog.Log().M("db update").Out()
+			global.Db.Update()
+		}
+		errs.Queue(prefix, global.Db.Err())
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
 		if errs.NotEmpty() {
@@ -68,6 +74,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Debug, "debug", "d", false, "enable debug")
-	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Verbose, "verbose", "v", false, "enable debug")
+	rootCmd.PersistentFlags().BoolVarP(&global.Flag.UpdateDb, "updatedb", "u", false, "update DB")
+	rootCmd.PersistentFlags().BoolVarP(&global.Flag.Verbose, "verbose", "v", false, "enable verbose")
 	rootCmd.PersistentFlags().StringVarP(&global.Conf.FileConf, "config", "", lib.ConfDefault.FileConf, "config file")
 }

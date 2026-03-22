@@ -22,24 +22,62 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package lib
+package cmd
 
-// Holding all flags from command line
-type TypeFlag struct {
-	Debug    bool // Enable debug output
-	UpdateDb bool // Update package database
-	Verbose  bool
+import (
+	"github.com/J-Siu/go-auto-docker/global"
+	"github.com/J-Siu/go-auto-docker/lib"
+	"github.com/J-Siu/go-helper/v2/errs"
+	"github.com/J-Siu/go-helper/v2/ezlog"
+	"github.com/spf13/cobra"
+)
+
+// checkCmd represents the check command
+var checkCmd = &cobra.Command{
+	Use:     "check <docker path>",
+	Aliases: []string{"c"},
+	Short:   "Check Alpine package update",
+	Run: func(cmd *cobra.Command, args []string) {
+		prefix := "Check"
+
+		var (
+			err error
+		)
+
+		if err != nil {
+			return
+		}
+
+		if len(args) == 0 {
+			args = []string{"."}
+		}
+
+		for _, workPath := range args {
+			docker := lib.TypeDocker{}
+
+			// Dockerfile file
+			if err == nil {
+				docker.
+					New(&workPath, global.Db, global.Flag.Debug, global.Flag.Verbose)
+				err = docker.Err
+			}
+
+			if err == nil {
+				ezlog.Log().N(prefix).YesNo(docker.VerNew > docker.VerCurr).N(docker.Pkg).M(docker.VerCurr).M("->")
+				if docker.VerNew == "" {
+					ezlog.M("<package not found>")
+				} else {
+					ezlog.M(docker.VerNew)
+				}
+				ezlog.Out()
+			}
+
+			errs.Queue("", err)
+		}
+	},
 }
 
-// Holding all flags for update
-type TypeFlagUpdate struct {
-	Commit    bool // Apply git commit. Only work with -save
-	BuildTest bool // Do not perform docker build
-	Save      bool // Write back to project folder
-	Tag       bool // Apply git tag. Only work with -commit
-}
-
-// Holding all flags for db
-type TypeFlagDbSearch struct {
-	Exact bool // Search exact word
+func init() {
+	cmd := checkCmd
+	rootCmd.AddCommand(cmd)
 }
