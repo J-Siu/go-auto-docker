@@ -25,7 +25,7 @@ THE SOFTWARE.
 package db
 
 import (
-	"github.com/J-Siu/go-auto-docker/cmd"
+	"github.com/J-Siu/go-auto-docker/cmd/root"
 	"github.com/spf13/cobra"
 )
 
@@ -37,5 +37,5 @@ var dbCmd = &cobra.Command{
 }
 
 func init() {
-cmd.RootCmd.AddCommand(dbCmd)
+	root.RootCmd.AddCommand(dbCmd)
 }
