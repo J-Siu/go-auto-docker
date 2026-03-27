@@ -75,7 +75,7 @@ var updateCmd = &cobra.Command{
 			// Dockerfile file
 			if err == nil && updateAvailable {
 				docker.
-					New(&repo.DirCache, global.Db, global.Flag.Debug, global.Flag.Verbose).
+					New(&global.Conf.DirCache, global.Db, global.Flag.Debug, global.Flag.Verbose).
 					Update().
 					Dump(global.Flag.Debug).
 					BuildTest(global.FlagUpdate.BuildTest)
@@ -97,7 +97,7 @@ var updateCmd = &cobra.Command{
 					Dump(global.Flag.Debug)
 				err = changelog.Err
 
-				// Repository commit and tag
+				// Repository commit and tag in cache(tmp)
 				if err == nil && global.FlagUpdate.Commit {
 					repo.Commit(docker.VerNew, global.FlagUpdate.Tag, true)
 					err = repo.Err
