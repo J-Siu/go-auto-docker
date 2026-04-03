@@ -29,6 +29,7 @@ import (
 	"github.com/J-Siu/go-auto-docker/lib"
 	"github.com/J-Siu/go-helper/v2/errs"
 	"github.com/J-Siu/go-helper/v2/ezlog"
+	"github.com/J-Siu/go-helper/v2/str"
 	"github.com/spf13/cobra"
 )
 
@@ -75,7 +76,7 @@ var updateCmd = &cobra.Command{
 			// Dockerfile file
 			if err == nil && updateAvailable {
 				docker.
-					New(&global.Conf.DirCache, global.Db, global.Flag.Debug, global.Flag.Verbose).
+					New(&repo.DirCache, global.Db, global.Flag.Debug, global.Flag.Verbose).
 					Update().
 					Dump(global.Flag.Debug).
 					BuildTest(global.FlagUpdate.BuildTest)
@@ -110,7 +111,7 @@ var updateCmd = &cobra.Command{
 			}
 
 			if err == nil {
-				ezlog.Log().N(prefix).YesNo(docker.Updated()).N(docker.Pkg).M(docker.VerCurr).M("->")
+				ezlog.Log().N(prefix).N(str.YesNo(docker.Updated())).N(docker.Pkg).M(docker.VerCurr).M("->")
 				if docker.VerNew == "" {
 					ezlog.M("<package not found>")
 				} else {
