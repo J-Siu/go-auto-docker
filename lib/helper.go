@@ -22,8 +22,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package global
+package lib
 
-var (
-	Version = "v1.0.1"
+import (
+	"strings"
+
+	"github.com/J-Siu/go-helper/v2/ezlog"
+	"golang.org/x/mod/semver"
 )
+
+func VerCompare(ver1, ver2 string) int {
+	prefix := "VerCompare"
+	if !strings.HasPrefix(ver1, "v") {
+		ver1 = "v" + ver1
+	}
+	if !strings.HasPrefix(ver2, "v") {
+		ver2 = "v" + ver2
+	}
+	semCom := semver.Compare(ver1, ver2)
+	ezlog.Debug().N(prefix).N("ver1").M(ver1).Out()
+	ezlog.Debug().N(prefix).N("ver2").M(ver2).Out()
+	ezlog.Debug().N(prefix).N("semver.Compare").M(semCom).Out()
+	return semCom
+}

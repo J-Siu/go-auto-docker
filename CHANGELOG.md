@@ -23,3 +23,5 @@
 - v1.0.0
   - create tmp repo only if package has update
   - use subcommand folder
+- v1.0.1
+  - fix version compare

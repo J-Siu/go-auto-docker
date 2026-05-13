@@ -56,15 +56,17 @@ var updateCmd = &cobra.Command{
 		}
 
 		for _, workPath := range args {
+			changelog := lib.TypeChangeLog{}
 			docker := lib.TypeDocker{}
 			repo := lib.TypeRepository{}
-			changelog := lib.TypeChangeLog{}
+			updateAvailable = false
 
 			if err == nil {
 				docker.New(&workPath, global.Db, global.Flag.Debug, global.Flag.Verbose)
+				updateAvailable = lib.VerCompare(docker.VerNew, docker.VerCurr) == 1
+				ezlog.Debug().N(prefix).N("updateAvailable").M(updateAvailable).Out()
 				err = docker.Err
 			}
-			updateAvailable = docker.VerNew > docker.VerCurr
 			// Repository copy to cache(tmp)
 			if err == nil && updateAvailable {
 				repo.
@@ -83,8 +85,8 @@ var updateCmd = &cobra.Command{
 				err = docker.Err
 			}
 
+			// CHANGELOG.md file
 			if err == nil && docker.Updated() {
-				// README.md file. Depends on docker.VerCurr. Must be done after processing docker.
 				property := lib.TypeChangeLogProperty{
 					Dir:           &repo.DirCache,
 					FileChangeLog: &global.Conf.FileChangeLog,
@@ -113,7 +115,9 @@ var updateCmd = &cobra.Command{
 			if err == nil {
 				ezlog.Log().N(prefix).N(str.YesNo(docker.Updated())).N(docker.Pkg).M(docker.VerCurr).M("->")
 				if docker.VerNew == "" {
-					ezlog.M("<package not found>")
+					ezlog.M("not found")
+				} else if docker.VerCurr == docker.VerNew {
+					ezlog.M("up to date")
 				} else {
 					ezlog.M(docker.VerNew)
 				}

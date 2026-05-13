@@ -85,7 +85,7 @@ func (t *TypeChangeLog) Update() *TypeChangeLog {
 	prefix := t.MyType + ".Update"
 	if t.CheckErrInit(prefix) {
 		var contentNew []string
-		if *t.VerNew > *t.VerCurr {
+		if VerCompare(*t.VerNew, *t.VerCurr) == 1 {
 			ezlog.Debug().N(prefix).N(t.Pkg).M(t.VerCurr).M("->").M(t.VerNew).Out()
 			for _, line := range *t.Content {
 				ezlog.Debug().N(prefix).M(&line).Out()
