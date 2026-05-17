@@ -210,14 +210,14 @@ func (t *TypeDocker) extract() *TypeDocker {
 				// search for <Pkg=*>
 				for _, w := range words {
 					subStrArr := []string{t.Pkg + "="}
-					if str.ContainsAnySubStringsBool(&w, &subStrArr, false) {
+					if str.ContainsAnySubStringsBool(w, &subStrArr, false) {
 						ezlog.Debug().N(prefix).N(words[0]).M(w).Out()
 						t.PkgRun = w
 					}
 				}
 				// detect branch testing
 				if strings.Contains(line, branchTesting) {
-					if !str.ArrayContains(&t.Repo, &testing, false) {
+					if !str.ArrayContains(&t.Repo, testing, false) {
 						t.Repo = append(t.Repo, testing)
 					}
 				}

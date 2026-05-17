@@ -25,3 +25,5 @@
   - use subcommand folder
 - v1.0.1
   - fix version compare
+- v1.0.2
+  - update go-helper/v2

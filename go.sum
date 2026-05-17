@@ -1,5 +1,5 @@
-github.com/J-Siu/go-helper/v2 v2.8.1 h1:QGUYt51hbDGyU5XAoFdusqtkQGQeUFmfXYZ0b0tE984=
-github.com/J-Siu/go-helper/v2 v2.8.1/go.mod h1:sTbFTDC0ZmFiGYkrisQeb56LX9ofjtIS0IbTYcAGrBY=
+github.com/J-Siu/go-helper/v2 v2.8.2 h1:sUxX+gAjU5RwmjlH4cygXe9nKFVcpMfHYoBLvJzvnIw=
+github.com/J-Siu/go-helper/v2 v2.8.2/go.mod h1:Uoj5uFTUs2ghcRocyKsld47SL0tiUbDnFnCrMiAeD9c=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/ProtonMail/go-crypto v1.4.1 h1:9RfcZHqEQUvP8RzecWEUafnZVtEvrBVL9BiF67IQOfM=
