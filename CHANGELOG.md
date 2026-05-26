@@ -27,3 +27,6 @@
   - fix version compare
 - v1.0.2
   - update go-helper/v2
+- v1.0.3
+  - VerCompare -> VerNewer
+  - update go-helper/v2
