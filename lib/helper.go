@@ -31,17 +31,17 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-func VerCompare(ver1, ver2 string) int {
+func VerNewer(v1, v2 string) bool {
 	prefix := "VerCompare"
-	if !strings.HasPrefix(ver1, "v") {
-		ver1 = "v" + ver1
+	if !strings.HasPrefix(v1, "v") {
+		v1 = "v" + v1
 	}
-	if !strings.HasPrefix(ver2, "v") {
-		ver2 = "v" + ver2
+	if !strings.HasPrefix(v2, "v") {
+		v2 = "v" + v2
 	}
-	semCom := semver.Compare(ver1, ver2)
-	ezlog.Debug().N(prefix).N("ver1").M(ver1).Out()
-	ezlog.Debug().N(prefix).N("ver2").M(ver2).Out()
-	ezlog.Debug().N(prefix).N("semver.Compare").M(semCom).Out()
-	return semCom
+	newer := semver.Compare(v1, v2) > 0
+	ezlog.Debug().N(prefix).N("new").M(v1).Out()
+	ezlog.Debug().N(prefix).N("old").M(v2).Out()
+	ezlog.Debug().N(prefix).N("semver.Compare > 0").M(newer).Out()
+	return newer
 }

@@ -56,6 +56,8 @@ var updateCmd = &cobra.Command{
 		}
 
 		for _, workPath := range args {
+			err = nil
+
 			changelog := lib.TypeChangeLog{}
 			docker := lib.TypeDocker{}
 			repo := lib.TypeRepository{}
@@ -63,7 +65,7 @@ var updateCmd = &cobra.Command{
 
 			if err == nil {
 				docker.New(&workPath, global.Db, global.Flag.Debug, global.Flag.Verbose)
-				updateAvailable = lib.VerCompare(docker.VerNew, docker.VerCurr) == 1
+				updateAvailable = lib.VerNewer(docker.VerNew, docker.VerCurr)
 				ezlog.Debug().N(prefix).N("updateAvailable").M(updateAvailable).Out()
 				err = docker.Err
 			}
