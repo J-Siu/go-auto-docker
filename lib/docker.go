@@ -172,6 +172,7 @@ func (t *TypeDocker) Update() *TypeDocker {
 // Extract information from `Content`
 //
 //   - FROM: `Distro`:`Branch`
+//   - ARG: `Version`
 //   - LABEL: `Pkg`(package name)
 //   - LABEL: `Version`
 //   - RUN: <Pkg=*>
@@ -184,6 +185,15 @@ func (t *TypeDocker) extract() *TypeDocker {
 			ezlog.Debug().N(prefix).M(line).Out()
 			words := strings.Split(line, " ") // split line by space
 			switch strings.ToLower(words[0]) {
+			case "arg":
+				ezlog.Debug().N(prefix).N(words[0]).M(words[1]).Out()
+				arg := strings.Split(words[1], "=")
+				switch strings.ToLower(arg[0]) {
+				case "version":
+					ezlog.Debug().N(prefix).N(words[0]).N(arg[0]).M(arg[1]).Out()
+					t.VerCurr = strings.ReplaceAll(arg[1], "\"", "")
+					t.VerNew = ""
+				}
 			case "from":
 				ezlog.Debug().N(prefix).N(words[0]).M(words[1]).Out()
 				// just in case no branch
@@ -200,8 +210,10 @@ func (t *TypeDocker) extract() *TypeDocker {
 				switch strings.ToLower(label[0]) {
 				case "version":
 					ezlog.Debug().N(prefix).N(words[0]).N(label[0]).M(label[1]).Out()
-					t.VerCurr = strings.ReplaceAll(label[1], "\"", "")
-					t.VerNew = ""
+					if strings.Index(label[1], "$") == -1 { // not a VAR
+						t.VerCurr = strings.ReplaceAll(label[1], "\"", "")
+						t.VerNew = ""
+					}
 				case "name":
 					ezlog.Debug().N(prefix).N(words[0]).N(label[0]).M(label[1]).Out()
 					t.Pkg = strings.ReplaceAll(label[1], "\"", "")
