@@ -210,7 +210,7 @@ func (t *TypeDocker) extract() *TypeDocker {
 				switch strings.ToLower(label[0]) {
 				case "version":
 					ezlog.Debug().N(prefix).N(words[0]).N(label[0]).M(label[1]).Out()
-					if strings.Index(label[1], "$") == -1 { // not a VAR
+					if !strings.Contains(label[1], "$") { // not a VAR
 						t.VerCurr = strings.ReplaceAll(label[1], "\"", "")
 						t.VerNew = ""
 					}
