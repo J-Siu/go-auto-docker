@@ -30,3 +30,5 @@
 - v1.0.3
   - VerCompare -> VerNewer
   - update go-helper/v2
+- v1.0.4
+  - feat: support non-semver

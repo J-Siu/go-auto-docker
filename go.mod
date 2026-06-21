@@ -7,7 +7,6 @@ require (
 	github.com/go-git/go-git/v6 v6.0.0-alpha.4
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
-	golang.org/x/mod v0.36.0
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.1
 )
